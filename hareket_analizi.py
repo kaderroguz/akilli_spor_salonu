@@ -119,6 +119,86 @@ def aci_hesapla(a, b, c):
 
 
 # Kamerayı aç
+def mesafe_hesapla(a, b):
+    a = np.array(a)
+    b = np.array(b)
+    return np.linalg.norm(a - b)
+
+
+def orta_nokta(a, b):
+    return [
+        (a[0] + b[0]) / 2,
+        (a[1] + b[1]) / 2
+    ]
+
+
+def landmark_gorunur(noktalar, landmark, esik=0.45):
+    return noktalar[landmark.value].visibility >= esik
+
+
+def squat_form_kontrol(
+    noktalar,
+    sol_omuz,
+    sag_omuz,
+    sol_kalca,
+    sag_kalca,
+    sol_diz,
+    sag_diz,
+    sol_ayak_bilegi,
+    sag_ayak_bilegi,
+    sol_diz_acisi,
+    sag_diz_acisi,
+    sol_kalca_acisi,
+    sag_kalca_acisi
+):
+    gerekli_noktalar = [
+        mp_pose.PoseLandmark.LEFT_SHOULDER,
+        mp_pose.PoseLandmark.RIGHT_SHOULDER,
+        mp_pose.PoseLandmark.LEFT_HIP,
+        mp_pose.PoseLandmark.RIGHT_HIP,
+        mp_pose.PoseLandmark.LEFT_KNEE,
+        mp_pose.PoseLandmark.RIGHT_KNEE,
+        mp_pose.PoseLandmark.LEFT_ANKLE,
+        mp_pose.PoseLandmark.RIGHT_ANKLE
+    ]
+
+    if not all(landmark_gorunur(noktalar, nokta) for nokta in gerekli_noktalar):
+        return False, "Vucudunu kameraya tam goster"
+
+    ort_diz_acisi = (sol_diz_acisi + sag_diz_acisi) / 2
+    ort_kalca_acisi = (sol_kalca_acisi + sag_kalca_acisi) / 2
+    omuz_orta = orta_nokta(sol_omuz, sag_omuz)
+    kalca_orta = orta_nokta(sol_kalca, sag_kalca)
+
+    govde_egimi = abs(omuz_orta[0] - kalca_orta[0]) / max(
+        abs(omuz_orta[1] - kalca_orta[1]),
+        0.001
+    )
+    omuz_genisligi = mesafe_hesapla(sol_omuz, sag_omuz)
+    ayak_genisligi = mesafe_hesapla(sol_ayak_bilegi, sag_ayak_bilegi)
+    diz_genisligi = mesafe_hesapla(sol_diz, sag_diz)
+
+    if not 70 <= ort_diz_acisi <= 125:
+        return False, "Squat derinligi yetersiz"
+
+    if abs(sol_diz_acisi - sag_diz_acisi) > 35:
+        return False, "Iki bacagini dengeli buk"
+
+    if ort_kalca_acisi >= 145:
+        return False, "Kalcani geriye al"
+
+    if govde_egimi > 0.60:
+        return False, "Govdeni daha dik tut"
+
+    if ayak_genisligi < omuz_genisligi * 0.55:
+        return False, "Ayaklarini omuz genisligine ac"
+
+    if diz_genisligi < ayak_genisligi * 0.55:
+        return False, "Dizlerini iceri dusurme"
+
+    return True, "DOGRU"
+
+
 kamera = cv2.VideoCapture(0)
 
 kamera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -155,6 +235,12 @@ squat_asamasi = "yukari"
 squat_durumu = "Squat bekleniyor"
 dogru_squat = 0
 hatali_squat = 0
+squat_min_diz_acisi = 180
+squat_min_sol_diz_acisi = 180
+squat_min_sag_diz_acisi = 180
+squat_min_sol_kalca_acisi = 180
+squat_min_sag_kalca_acisi = 180
+squat_alt_pozisyon = None
 
 
 # Şınav değişkenleri
@@ -330,6 +416,15 @@ while True:
         ]
 
         # Sağ kalça
+        sag_diz = [
+            noktalar[
+                mp_pose.PoseLandmark.RIGHT_KNEE.value
+            ].x,
+            noktalar[
+                mp_pose.PoseLandmark.RIGHT_KNEE.value
+            ].y
+        ]
+
         sag_kalca = [
             noktalar[
                 mp_pose.PoseLandmark.RIGHT_HIP.value
@@ -358,11 +453,25 @@ while True:
             sol_diz
         )
 
+        sag_kalca_acisi = aci_hesapla(
+            sag_omuz,
+            sag_kalca,
+            sag_diz
+        )
+
         diz_acisi = aci_hesapla(
             sol_kalca,
             sol_diz,
             sol_ayak_bilegi
         )
+
+        sag_diz_acisi = aci_hesapla(
+            sag_kalca,
+            sag_diz,
+            sag_ayak_bilegi
+        )
+
+        squat_diz_acisi = (diz_acisi + sag_diz_acisi) / 2
 
         ayak_bilegi_acisi = aci_hesapla(
             sol_diz,
@@ -391,28 +500,80 @@ while True:
         # Squat kontrolü
         if istenen_hareket == "Squats" and hareket_kontrol_aktif:
 
-            if diz_acisi > 155:
-                squat_asamasi = "yukari"
-                squat_durumu = "Asagi in"
+            if squat_diz_acisi < squat_min_diz_acisi:
+                squat_min_diz_acisi = squat_diz_acisi
+                squat_min_sol_diz_acisi = diz_acisi
+                squat_min_sag_diz_acisi = sag_diz_acisi
+                squat_min_sol_kalca_acisi = kalca_acisi
+                squat_min_sag_kalca_acisi = sag_kalca_acisi
+                squat_alt_pozisyon = {
+                    "sol_omuz": sol_omuz,
+                    "sag_omuz": sag_omuz,
+                    "sol_kalca": sol_kalca,
+                    "sag_kalca": sag_kalca,
+                    "sol_diz": sol_diz,
+                    "sag_diz": sag_diz,
+                    "sol_ayak_bilegi": sol_ayak_bilegi,
+                    "sag_ayak_bilegi": sag_ayak_bilegi
+                }
 
-            elif (
-                diz_acisi < 105
+            if (
+                squat_diz_acisi < 125
                 and squat_asamasi == "yukari"
             ):
-                squat_sayisi += 1
                 squat_asamasi = "asagi"
+                squat_durumu = "Yukari kalk"
 
-                if (
-                    55 <= diz_acisi <= 105
-                    and kalca_acisi < 130
-                ):
+            elif (
+                squat_diz_acisi > 150
+                and squat_asamasi == "asagi"
+            ):
+                squat_asamasi = "yukari"
+                squat_pozisyon = squat_alt_pozisyon or {
+                    "sol_omuz": sol_omuz,
+                    "sag_omuz": sag_omuz,
+                    "sol_kalca": sol_kalca,
+                    "sag_kalca": sag_kalca,
+                    "sol_diz": sol_diz,
+                    "sag_diz": sag_diz,
+                    "sol_ayak_bilegi": sol_ayak_bilegi,
+                    "sag_ayak_bilegi": sag_ayak_bilegi
+                }
+                squat_dogru, squat_mesaj = squat_form_kontrol(
+                    noktalar,
+                    squat_pozisyon["sol_omuz"],
+                    squat_pozisyon["sag_omuz"],
+                    squat_pozisyon["sol_kalca"],
+                    squat_pozisyon["sag_kalca"],
+                    squat_pozisyon["sol_diz"],
+                    squat_pozisyon["sag_diz"],
+                    squat_pozisyon["sol_ayak_bilegi"],
+                    squat_pozisyon["sag_ayak_bilegi"],
+                    squat_min_sol_diz_acisi,
+                    squat_min_sag_diz_acisi,
+                    squat_min_sol_kalca_acisi,
+                    squat_min_sag_kalca_acisi
+                )
+
+                if squat_dogru:
+                    squat_sayisi += 1
                     dogru_squat += 1
-                    squat_durumu = "DOGRU"
+                    squat_durumu = squat_mesaj
                 else:
                     hatali_squat += 1
-                    squat_durumu = "HATALI"
+                    squat_durumu = squat_mesaj
 
-            elif 105 <= diz_acisi <= 155:
+                squat_min_diz_acisi = 180
+                squat_min_sol_diz_acisi = 180
+                squat_min_sag_diz_acisi = 180
+                squat_min_sol_kalca_acisi = 180
+                squat_min_sag_kalca_acisi = 180
+                squat_alt_pozisyon = None
+
+            elif squat_diz_acisi >= 150:
+                squat_durumu = "Asagi in"
+
+            elif 125 <= squat_diz_acisi <= 150:
                 squat_durumu = "Biraz daha asagi in"
 
         # Şınav kontrolü
@@ -426,10 +587,10 @@ while True:
                 dirsek_acisi < 95
                 and sinav_asamasi == "yukari"
             ):
-                sinav_sayisi += 1
                 sinav_asamasi = "asagi"
 
                 if kalca_acisi > 150:
+                    sinav_sayisi += 1
                     dogru_sinav += 1
                     sinav_durumu = "DOGRU"
                 else:
@@ -450,10 +611,10 @@ while True:
                 dirsek_acisi < 75
                 and barfiks_asamasi == "asagi"
             ):
-                barfiks_sayisi += 1
                 barfiks_asamasi = "yukari"
 
                 if dirsek_acisi < 65:
+                    barfiks_sayisi += 1
                     dogru_barfiks += 1
                     barfiks_durumu = "DOGRU"
                 else:
@@ -542,9 +703,8 @@ while True:
 
                 # İki yön değişimi bir tam tekrar sayılır
                 if russian_twist_yarim % 2 == 0:
-                    russian_twist_sayisi += 1
-
                     if kalca_acisi < 150:
+                        russian_twist_sayisi += 1
                         dogru_russian_twist += 1
                         russian_twist_durumu = "DOGRU"
                     else:

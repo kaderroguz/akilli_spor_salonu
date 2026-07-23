@@ -62,3 +62,10 @@ for select using (
   hoca_id = auth.uid()
   and public.sporcu_bana_bagli_mi(sporcu_id)
 );
+
+drop policy if exists "hoca gonderdigini siler" on public.bildirimler;
+create policy "hoca gonderdigini siler" on public.bildirimler
+for delete using (
+  hoca_id = auth.uid()
+  and public.sporcu_bana_bagli_mi(sporcu_id)
+);

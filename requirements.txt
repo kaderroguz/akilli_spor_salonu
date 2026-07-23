@@ -1,12 +1,6 @@
-streamlit
-streamlit-webrtc
 opencv-python-headless
 mediapipe
 numpy
 pandas
 scikit-learn
 joblib
-av
-reportlab
-supabase
-extra-streamlit-components

@@ -738,20 +738,14 @@ function CameraTraining({
   const lastPoseFrameAtRef = useRef(0);
   const repPhaseRef = useRef<RepPhase>("up");
   const lastRepAtRef = useRef(0);
-  const lastWarningCountAtRef = useRef(0);
   const lowestSquatRef = useRef<FullBodyAnalysis | null>(null);
   const totalRef = useRef(0);
-  const wrongRef = useRef(0);
   const formErrorCountsRef = useRef<Map<string, number>>(new Map());
-  function setCameraStatus(_status: string) {
-    void _status;
-    return;
-  }
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [correct, setCorrect] = useState(0);
-  const [wrong, setWrong] = useState(0);
+  const [cameraStatus, setCameraStatus] = useState("Kamera kapali.");
   const [formWarning, setFormWarning] = useState("");
   const [showPreparationHint, setShowPreparationHint] = useState(false);
   const [simulationMode, setSimulationMode] = useState<"correct" | "wrong">("correct");
@@ -760,13 +754,12 @@ function CameraTraining({
   const [isGuideSpeaking, setIsGuideSpeaking] = useState(false);
   const [isGuidePaused, setIsGuidePaused] = useState(false);
 
-  const total = correct + wrong;
+  const total = correct;
   const guide = exerciseGuides[exercise] || exerciseGuides.Squat;
 
   useEffect(() => {
     totalRef.current = total;
-    wrongRef.current = wrong;
-  }, [total, wrong]);
+  }, [total]);
 
   useEffect(() => {
     if (!isTraining) return;
@@ -788,7 +781,7 @@ function CameraTraining({
   useEffect(() => {
     if (!formWarning || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
-    const speech = new SpeechSynthesisUtterance(`Yanlış. Doğru yapılışı canlı rehberde takip et. ${formWarning}`);
+    const speech = new SpeechSynthesisUtterance(formWarning);
     speech.lang = "tr-TR";
     speech.rate = 0.9;
     speech.onstart = () => setIsGuideSpeaking(true);
@@ -911,9 +904,7 @@ function CameraTraining({
       }
       setIsCameraOpen(true);
     setCorrect(0);
-    setWrong(0);
     totalRef.current = 0;
-    wrongRef.current = 0;
     formErrorCountsRef.current.clear();
     setElapsed(0);
     pausedElapsedRef.current = 0;
@@ -948,9 +939,7 @@ function CameraTraining({
     }
     setIsCameraOpen(false);
     setCorrect(0);
-    setWrong(0);
     totalRef.current = 0;
-    wrongRef.current = 0;
     formErrorCountsRef.current.clear();
     setElapsed(0);
     pausedElapsedRef.current = 0;
@@ -972,9 +961,7 @@ function CameraTraining({
     const isResuming = pausedElapsedRef.current > 0 || elapsed > 0;
     if (!isResuming) {
       setCorrect(0);
-      setWrong(0);
       totalRef.current = 0;
-      wrongRef.current = 0;
       formErrorCountsRef.current.clear();
       setElapsed(0);
       pausedElapsedRef.current = 0;
@@ -1073,7 +1060,7 @@ function CameraTraining({
     setCameraStatus("Sonuç kaydediliyor...");
     const saved = await onSave({
       dogru: correct,
-      hatali: wrong,
+      hatali: 0,
       hareket: exercise,
       en_sik_form_hatasi: getMostCommonFormError(),
       sure_saniye: finalElapsed,
@@ -1091,9 +1078,7 @@ function CameraTraining({
       }
       setIsCameraOpen(false);
       setCorrect(0);
-      setWrong(0);
       totalRef.current = 0;
-      wrongRef.current = 0;
       formErrorCountsRef.current.clear();
       setElapsed(0);
       pausedElapsedRef.current = 0;
@@ -1140,9 +1125,8 @@ function CameraTraining({
   }
 
   function resetRepTracking() {
-    repPhaseRef.current = guide.animation === "jack" ? "closed" : "up";
+    repPhaseRef.current = guide.animation === "jack" ? "closed" : guide.animation === "twist" ? "center" : "up";
     lastRepAtRef.current = 0;
-    lastWarningCountAtRef.current = 0;
     lowestSquatRef.current = null;
   }
 
@@ -1157,11 +1141,7 @@ function CameraTraining({
   }
 
   function countWrongAttempt(warning: string) {
-    if (totalRef.current >= target) return;
-    wrongRef.current += 1;
-    totalRef.current += 1;
     trackFormError(warning);
-    setWrong((value) => value + 1);
   }
 
   function handlePoseResults(landmarks: PoseLandmark[]) {
@@ -1172,12 +1152,8 @@ function CameraTraining({
 
     if (!result.completed) {
       if (result.warning) {
-        const now = Date.now();
-        if (now - lastWarningCountAtRef.current > 1800) {
-          lastWarningCountAtRef.current = now;
-          countWrongAttempt(result.warning);
-        }
         setFormWarning(result.warning);
+        setCameraStatus(result.warning);
         setSimulationMode("wrong");
       }
       return;
@@ -1189,16 +1165,18 @@ function CameraTraining({
 
     if (result.correct) {
       setCorrect((value) => {
-        if (value + wrongRef.current >= target) return value;
+        if (value >= target) return value;
         totalRef.current += 1;
         return value + 1;
       });
       setFormWarning("");
+      setCameraStatus("Dogru tekrar sayildi.");
       setSimulationMode("correct");
     } else {
       const warning = result.warning || "Formu düzelt";
       countWrongAttempt(warning);
       setFormWarning(warning);
+      setCameraStatus(warning);
       setSimulationMode("wrong");
     }
   }
@@ -1274,10 +1252,9 @@ function CameraTraining({
                 {isTraining ? "Antrenman aktif" : "Hazır"}
               </span>
             </div>
-            <div className="mt-2 grid grid-cols-3 gap-1.5">
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
               <CounterBox label="Toplam" value={total} />
               <CounterBox label="Doğru" value={correct} />
-              <CounterBox label="Hatalı" value={wrong} />
             </div>
             {showPreparationHint ? (
               <div className="mt-2 rounded-md border border-cyan-300/30 bg-slate-900/80 p-2.5">
@@ -1292,7 +1269,7 @@ function CameraTraining({
             {formWarning ? (
               <div className="mt-2 rounded-md border border-rose-300/50 bg-rose-950/90 p-2.5">
                 <p className="text-[10px] font-black uppercase tracking-[0.14em] text-rose-200">
-                  Yanlış
+                  Duzelt
                 </p>
                 <p className="mt-1.5 text-xs font-bold leading-5">
                   Doğru yapılışı canlı rehberde takip et.
@@ -1335,6 +1312,7 @@ function CameraTraining({
           <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-200">
             Bilgi
           </p>
+          <p className="mt-2 text-sm font-semibold leading-6 text-cyan-50">{cameraStatus}</p>
           <div className="mt-3 grid gap-2 text-sm text-cyan-50 sm:grid-cols-4">
             <div className="flex items-center gap-2">
               <span className="text-cyan-100/80">Kamera</span>
@@ -1359,8 +1337,8 @@ function CameraTraining({
 
         <div className="mt-4 grid grid-cols-3 gap-3">
           <MiniStat label="Süre" value={`${elapsed} sn`} />
-          <MiniStat label="Toplam" value={`${total}/${target}`} />
-          <MiniStat label="Hatalı" value={wrong} />
+          <MiniStat label="Hedef" value={`${total}/${target}`} />
+          <MiniStat label="Doğru" value={correct} />
         </div>
         <p className="mt-3 text-xs leading-5 text-slate-400">
           Telefon veya bilgisayar kamerasi ile hareket formu tarayicida analiz edilir.
@@ -2034,17 +2012,27 @@ function analyzeExercisePose(
   phase: RepPhase,
   lowestSquat: FullBodyAnalysis | null,
 ): PoseAnalysisResult {
-  const body = analyzeFullBody(landmarks);
+  const body = analyzeFullBody(landmarks, animation);
   if (!body.visible) {
+    if (animation === "twist") {
+      return { completed: false, correct: false, warning: "Ellerin, omuzlarin ve kalcan kamerada gorunsun." };
+    }
     return { completed: false, correct: false, warning: "Vucudunu kameraya tam goster" };
   }
 
   if (animation === "squat") {
     const nextLowest = !lowestSquat || body.knee < lowestSquat.knee ? body : lowestSquat;
-    if (body.knee < 125 && phase === "up") {
-      return { completed: false, correct: false, lowestSquat: nextLowest, phase: "down" };
+    if (body.knee < 148 && phase === "up") {
+      return {
+        completed: false,
+        correct: false,
+        lowestSquat: nextLowest,
+        phase: "down",
+        warning: getSquatLiveGuidance(body, "down"),
+      };
     }
-    if (body.knee > 150 && phase === "down") {
+    const roseFromBottom = Boolean(nextLowest && body.knee - nextLowest.knee > 18);
+    if (phase === "down" && (body.knee > 145 || roseFromBottom)) {
       const checked = checkSquatForm(nextLowest);
       return {
         completed: true,
@@ -2054,12 +2042,17 @@ function analyzeExercisePose(
         warning: checked.warning,
       };
     }
-    return { completed: false, correct: false, lowestSquat: nextLowest };
+    return {
+      completed: false,
+      correct: false,
+      lowestSquat: nextLowest,
+      warning: getSquatLiveGuidance(body, phase),
+    };
   }
 
   if (animation === "pushup") {
     if (body.elbow < 95 && phase === "up") {
-      return { completed: false, correct: false, phase: "down" };
+      return { completed: false, correct: false, phase: "down", warning: "Simdi kontrollu sekilde yukari it" };
     }
     if (body.elbow > 150 && phase === "down") {
       const correct = body.hip > 145 && body.torsoLean < 0.85;
@@ -2070,6 +2063,7 @@ function analyzeExercisePose(
         warning: correct ? "" : "Belini duz tut",
       };
     }
+    return { completed: false, correct: false, warning: getPushupLiveGuidance(body, phase) };
   }
 
   if (animation === "barfiks") {
@@ -2082,7 +2076,8 @@ function analyzeExercisePose(
         warning: correct ? "" : "Biraz daha yukari cik",
       };
     }
-    if (body.elbow > 145) return { completed: false, correct: false, phase: "up" };
+    if (body.elbow > 145) return { completed: false, correct: false, phase: "up", warning: "Simdi dirseklerini bukerek kendini yukari cek" };
+    return { completed: false, correct: false, warning: getPullupLiveGuidance(body, phase) };
   }
 
   if (animation === "jack") {
@@ -2095,29 +2090,33 @@ function analyzeExercisePose(
     if (body.wristsAboveShoulders && body.ankleWidth <= body.shoulderWidth * 1.15) {
       return { completed: false, correct: false, warning: "Ayaklarini daha fazla ac" };
     }
+    return { completed: false, correct: false, warning: getJackLiveGuidance(body, phase) };
   }
 
   if (animation === "twist") {
-    const threshold = Math.max(0.055, body.shoulderWidth * 0.35);
+    const threshold = Math.max(0.03, body.shoulderWidth * 0.18);
     const side: RepPhase = body.wristHipOffset < -threshold ? "left" : body.wristHipOffset > threshold ? "right" : "center";
-    if ((side === "left" || side === "right") && phase !== "center" && phase !== side) {
-      const correct = body.hip < 155;
+    if ((side === "left" || side === "right") && phase !== side) {
+      const correct = body.torsoLean < 1.8;
       return {
         completed: true,
         correct,
         phase: side,
-        warning: correct ? "" : "Biraz geriye yaslan",
+        warning: correct ? "" : "Dik dur, sadece govdeni kontrollu cevir",
       };
     }
-    return { completed: false, correct: false, phase: side };
+    return { completed: false, correct: false, phase: side, warning: getTwistLiveGuidance(body, phase) };
   }
 
   return { completed: false, correct: false };
 }
 
-function analyzeFullBody(landmarks: PoseLandmark[]): FullBodyAnalysis {
+function analyzeFullBody(
+  landmarks: PoseLandmark[],
+  animation: "barfiks" | "jack" | "pushup" | "squat" | "twist",
+): FullBodyAnalysis {
   const p = (index: number) => landmarks[index];
-  const required = [
+  const bodyRequired = [
     poseIndexes.leftShoulder,
     poseIndexes.rightShoulder,
     poseIndexes.leftHip,
@@ -2126,11 +2125,14 @@ function analyzeFullBody(landmarks: PoseLandmark[]): FullBodyAnalysis {
     poseIndexes.rightKnee,
     poseIndexes.leftAnkle,
     poseIndexes.rightAnkle,
+  ];
+  const armRequired = [
     poseIndexes.leftWrist,
     poseIndexes.rightWrist,
     poseIndexes.leftElbow,
     poseIndexes.rightElbow,
   ];
+  const required = animation === "squat" ? bodyRequired : [...bodyRequired, ...armRequired];
   const visible = required.every((index) => (p(index)?.visibility ?? 0) > 0.45);
   if (!visible) {
     return {
@@ -2154,11 +2156,12 @@ function analyzeFullBody(landmarks: PoseLandmark[]): FullBodyAnalysis {
   const rightKnee = angle(p(poseIndexes.rightHip), p(poseIndexes.rightKnee), p(poseIndexes.rightAnkle));
   const leftHip = angle(p(poseIndexes.leftShoulder), p(poseIndexes.leftHip), p(poseIndexes.leftKnee));
   const rightHip = angle(p(poseIndexes.rightShoulder), p(poseIndexes.rightHip), p(poseIndexes.rightKnee));
-  const leftElbow = angle(p(poseIndexes.leftShoulder), p(poseIndexes.leftElbow), p(poseIndexes.leftWrist));
-  const rightElbow = angle(p(poseIndexes.rightShoulder), p(poseIndexes.rightElbow), p(poseIndexes.rightWrist));
+  const hasArms = armRequired.every((index) => Boolean(p(index)));
+  const leftElbow = hasArms ? angle(p(poseIndexes.leftShoulder), p(poseIndexes.leftElbow), p(poseIndexes.leftWrist)) : 180;
+  const rightElbow = hasArms ? angle(p(poseIndexes.rightShoulder), p(poseIndexes.rightElbow), p(poseIndexes.rightWrist)) : 180;
   const shoulderCenter = midpoint(p(poseIndexes.leftShoulder), p(poseIndexes.rightShoulder));
   const hipCenter = midpoint(p(poseIndexes.leftHip), p(poseIndexes.rightHip));
-  const wristCenter = midpoint(p(poseIndexes.leftWrist), p(poseIndexes.rightWrist));
+  const wristCenter = hasArms ? midpoint(p(poseIndexes.leftWrist), p(poseIndexes.rightWrist)) : hipCenter;
   const shoulderWidth = distance(p(poseIndexes.leftShoulder), p(poseIndexes.rightShoulder));
   const ankleWidth = distance(p(poseIndexes.leftAnkle), p(poseIndexes.rightAnkle));
   const kneeWidth = distance(p(poseIndexes.leftKnee), p(poseIndexes.rightKnee));
@@ -2173,21 +2176,76 @@ function analyzeFullBody(landmarks: PoseLandmark[]): FullBodyAnalysis {
     shoulderWidth,
     torsoLean: Math.abs(shoulderCenter.x - hipCenter.x) / Math.max(Math.abs(shoulderCenter.y - hipCenter.y), 0.001),
     visible: true,
-    wristDistance: distance(p(poseIndexes.leftWrist), p(poseIndexes.rightWrist)),
+    wristDistance: hasArms ? distance(p(poseIndexes.leftWrist), p(poseIndexes.rightWrist)) : 0,
     wristHipOffset: wristCenter.x - hipCenter.x,
-    wristsAboveShoulders: p(poseIndexes.leftWrist).y < p(poseIndexes.leftShoulder).y && p(poseIndexes.rightWrist).y < p(poseIndexes.rightShoulder).y,
-    wristsBelowShoulders: p(poseIndexes.leftWrist).y > p(poseIndexes.leftShoulder).y && p(poseIndexes.rightWrist).y > p(poseIndexes.rightShoulder).y,
+    wristsAboveShoulders: hasArms && p(poseIndexes.leftWrist).y < p(poseIndexes.leftShoulder).y && p(poseIndexes.rightWrist).y < p(poseIndexes.rightShoulder).y,
+    wristsBelowShoulders: hasArms && p(poseIndexes.leftWrist).y > p(poseIndexes.leftShoulder).y && p(poseIndexes.rightWrist).y > p(poseIndexes.rightShoulder).y,
   };
 }
 
 function checkSquatForm(body: FullBodyAnalysis) {
-  if (body.knee < 70 || body.knee > 125) return { correct: false, warning: "Squat derinligi yetersiz" };
-  if (body.kneeBalance > 35) return { correct: false, warning: "Iki bacagini dengeli buk" };
-  if (body.hip >= 145) return { correct: false, warning: "Kalcani geriye al" };
-  if (body.torsoLean > 0.65) return { correct: false, warning: "Govdeni daha dik tut" };
-  if (body.ankleWidth < body.shoulderWidth * 0.55) return { correct: false, warning: "Ayaklarini omuz genisligine ac" };
-  if (body.kneeWidth < body.ankleWidth * 0.55) return { correct: false, warning: "Dizlerini iceri dusurme" };
+  if (body.knee > 155) return { correct: false, warning: "Biraz daha asagi in" };
+  if (body.knee < 45) return { correct: false, warning: "Cok asagi indin, kontrollu kalk" };
+  if (body.kneeBalance > 75) return { correct: false, warning: "Iki bacagini dengeli buk" };
+  if (body.torsoLean > 1.75) return { correct: false, warning: "Govdeni daha dik tut" };
+  if (body.ankleWidth < body.shoulderWidth * 0.22) return { correct: false, warning: "Ayaklarini omuz genisligine ac" };
+  if (body.kneeWidth < body.ankleWidth * 0.18) return { correct: false, warning: "Dizlerini iceri dusurme" };
   return { correct: true, warning: "" };
+}
+
+function getSquatLiveGuidance(body: FullBodyAnalysis, phase: RepPhase) {
+  if (body.ankleWidth < body.shoulderWidth * 0.32) {
+    return "Ayaklarini biraz daha ac, omuz genisligine yaklastir.";
+  }
+  if (body.kneeWidth < body.ankleWidth * 0.28) {
+    return "Dizlerini iceri dusurme, dizlerini ayak parmaklarinla ayni yone it.";
+  }
+  if (body.torsoLean > 1.35) {
+    return "Gogsunu kaldir, govdeni biraz daha dik tut.";
+  }
+  if (phase === "down") {
+    if (body.knee > 148) return "Dizlerini biraz daha buk ve kalcani geriye ver.";
+    if (body.knee > 120) return "Biraz daha asagi in, topuklarini yerde tut.";
+    return "Guzel, simdi topuklarindan guc alip yukari kalk.";
+  }
+  return "Baslamak icin dizlerini buk, kalcani geriye ver ve kontrollu asagi in.";
+}
+
+function getTwistLiveGuidance(body: FullBodyAnalysis, phase: RepPhase) {
+  if (body.torsoLean > 1.8) {
+    return "Dik dur, belini geriye kacirma ve karnini sik.";
+  }
+  if (body.wristDistance > body.shoulderWidth * 1.6) {
+    return "Ellerini gogus hizasinda birbirine daha yakin tut.";
+  }
+  if (phase === "left") {
+    return "Guzel, simdi merkeze gel ve saga dogru cevir.";
+  }
+  if (phase === "right") {
+    return "Guzel, simdi merkeze gel ve sola dogru cevir.";
+  }
+  return "Ellerini gogus hizasinda tut, govdeni belirgin sekilde saga veya sola cevir.";
+}
+
+function getPushupLiveGuidance(body: FullBodyAnalysis, phase: RepPhase) {
+  if (body.hip <= 140) return "Belini duz tut, kalcani cok dusurme.";
+  if (body.torsoLean >= 1.1) return "Omuz, kalca ve ayaklarini ayni cizgide tut.";
+  if (phase === "down") return "Avuclarindan guc al ve kontrollu sekilde yukari it.";
+  if (body.elbow > 125) return "Dirseklerini buk, gogsunu yere yaklastir.";
+  return "Guzel, kontrollu devam et ve hareketi tamamla.";
+}
+
+function getPullupLiveGuidance(body: FullBodyAnalysis, phase: RepPhase) {
+  if (phase === "down") return "Kontrollu sekilde asagi in, kollarini uzat.";
+  if (body.elbow > 120) return "Dirseklerini asagi cek, gogsu bara yaklastir.";
+  return "Biraz daha yukari cek, ceneni bar hizasina yaklastir.";
+}
+
+function getJackLiveGuidance(body: FullBodyAnalysis, phase: RepPhase) {
+  if (phase === "open") return "Simdi ayaklarini kapat ve kollarini yanlara indir.";
+  if (!body.wristsAboveShoulders) return "Kollarini basinin ustune kaldir.";
+  if (body.ankleWidth <= body.shoulderWidth * 1.15) return "Ayaklarini daha fazla yana ac.";
+  return "Ritmi koru, yumusak in ve tekrar kapan.";
 }
 
 function angle(a: PoseLandmark, b: PoseLandmark, c: PoseLandmark) {

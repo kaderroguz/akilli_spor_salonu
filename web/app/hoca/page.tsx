@@ -293,7 +293,7 @@ export default function HocaPage() {
     <DashboardLayout
       accent="emerald"
       sidebar={
-        <div className="grid gap-2">
+        <div className="flex gap-2 lg:grid">
           <SidebarButton active={activeTab === "anasayfa"} label="Ana Sayfa" onClick={() => setActiveTab("anasayfa")} />
           <SidebarButton active={activeTab === "sporcular"} label="Sporcularım" onClick={() => setActiveTab("sporcular")} />
           <SidebarButton active={activeTab === "gorev-atama"} label="Görev atama" onClick={() => setActiveTab("gorev-atama")} />
@@ -309,7 +309,7 @@ export default function HocaPage() {
 
       {activeTab === "anasayfa" && (
         <Panel title="Ana Sayfa">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Metric label="Sporcularım" value={approvedConnections.length} />
             <Metric label="Bekleyen istek" value={waitingConnections.length} />
             <Metric label="Program" value={programs.length} />
@@ -399,7 +399,7 @@ function normalizeRelatedProfiles<T extends { profiles?: unknown }>(items: unkno
 function SidebarButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
   return (
     <button
-      className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-md px-4 text-left text-sm font-bold transition ${
+      className={`flex min-h-12 shrink-0 items-center justify-between gap-3 rounded-md px-4 text-left text-sm font-bold transition lg:w-full ${
         active ? "bg-emerald-400 text-emerald-950" : "text-slate-300 hover:bg-white/10"
       }`}
       onClick={onClick}
@@ -412,7 +412,7 @@ function SidebarButton({ active, label, onClick }: { active: boolean; label: str
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
+    <div className="rounded-lg border border-white/10 bg-white/[0.05] p-4 sm:p-5">
       <p className="text-sm text-slate-300">{label}</p>
       <p className="mt-2 text-3xl font-bold">{value}</p>
     </div>
@@ -435,7 +435,7 @@ function CoachCodeCard({ code }: { code: string }) {
         Hoca kodu
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <p className="rounded-md bg-slate-950/70 px-4 py-3 font-mono text-xl font-black tracking-[0.12em] text-white">
+        <p className="max-w-full break-all rounded-md bg-slate-950/70 px-4 py-3 font-mono text-lg font-black text-white sm:text-xl sm:tracking-[0.12em]">
           {code || "Kod olusturulmadi"}
         </p>
         <button
@@ -474,9 +474,9 @@ function ConnectionList({
       {connections.map((connection) => {
         const athlete = athleteProfile(connection.sporcu_id, connection.profiles, connections);
         return (
-          <div className="rounded-md border border-white/10 bg-white/[0.05] p-4 pl-5" key={connection.sporcu_id}>
+          <div className="min-w-0 rounded-md border border-white/10 bg-white/[0.05] p-4" key={connection.sporcu_id}>
             <p className="font-semibold">{athlete.name}</p>
-            <p className="text-sm text-slate-300">{athlete.email}</p>
+            <p className="break-words text-sm text-slate-300">{athlete.email}</p>
             <span
               className={`mt-3 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold ${
                 connection.durum === "onaylandi"
@@ -595,7 +595,7 @@ function AssignmentForm({
         </label>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <NumberField label="Ödev no" min={1} onChange={onNumberChange} value={taskNo} />
         <NumberField label="Hedef tekrar" min={1} onChange={onRepsChange} value={reps} />
         <DateField label="Başlangıç tarihi" onChange={onStartDateChange} value={startDate} />
@@ -731,7 +731,7 @@ function ProgramList({
           {visiblePrograms.map((program) => {
             const athlete = athleteProfile(program.sporcu_id, program.profiles, connections);
             return (
-              <div className="relative rounded-md border border-white/10 bg-white/[0.05] p-4 pr-14" key={program.id}>
+              <div className="relative min-w-0 rounded-md border border-white/10 bg-white/[0.05] p-4 pr-14" key={program.id}>
                 <button
                   aria-label="Programı sil"
                   className="absolute right-3 top-3 grid size-9 place-items-center rounded-md border border-rose-300/35 text-rose-100 transition hover:bg-rose-400 hover:text-rose-950 disabled:opacity-60"
@@ -756,7 +756,7 @@ function ProgramList({
                     </span>
                   ) : null}
                 </div>
-                <p className="mt-1 text-xs text-slate-400">{athlete.email}</p>
+                <p className="mt-1 break-words text-xs text-slate-400">{athlete.email}</p>
                 <p className="mt-3 text-sm text-slate-300">Hedef {program.hedef_tekrar || 0} tekrar - {program.durum || "bekliyor"}</p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   <div className="rounded-md bg-slate-950/35 px-3 py-2">
@@ -802,11 +802,11 @@ function NotificationList({
       {notifications.map((notification) => {
         const athlete = athleteProfile(notification.sporcu_id, notification.profiles, connections);
         return (
-          <div className="rounded-md border border-white/10 bg-white/[0.05] p-4" key={notification.id}>
+          <div className="min-w-0 rounded-md border border-white/10 bg-white/[0.05] p-4" key={notification.id}>
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <h3 className="text-base font-black text-white">Alıcı: {athlete.name}</h3>
-                <p className="mt-1 text-xs text-slate-400">{athlete.email} · Ödev {notification.odev_no || "-"}</p>
+                <p className="mt-1 break-words text-xs text-slate-400">{athlete.email} · Ödev {notification.odev_no || "-"}</p>
               </div>
               <span
                 className={`rounded-md px-2.5 py-1 text-xs font-bold ${
@@ -889,7 +889,7 @@ function Status({ text }: { text: string }) {
 
 function Panel({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
+    <section className="min-w-0 rounded-lg border border-white/10 bg-white/[0.05] p-4 sm:p-5">
       <h2 className="text-xl font-bold">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>

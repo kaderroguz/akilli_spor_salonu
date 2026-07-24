@@ -189,7 +189,7 @@ export default function AdminPage() {
       sidebar={
         <div>
           <p className="text-lg font-extrabold text-blue-200">Admin Menüsü</p>
-          <div className="mt-4 grid gap-2">
+          <div className="mt-4 flex gap-2 lg:grid">
             <SidebarButton active={activeTab === "ozet"} count={profiles.length} label="Ana Sayfa" onClick={() => setActiveTab("ozet")} />
             <SidebarButton active={activeTab === "kullanicilar"} count={profiles.length} label="Kullanıcılar" onClick={() => setActiveTab("kullanicilar")} />
             <SidebarButton active={activeTab === "basvurular"} count={waitingRequestCount} label="Hoca başvuruları" onClick={() => setActiveTab("basvurular")} />
@@ -203,7 +203,7 @@ export default function AdminPage() {
 
       {activeTab === "ozet" && (
         <Panel title="Ana Sayfa">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Metric label="Toplam kullanıcı" value={profiles.length} />
             <Metric label="Sporcu" value={athleteCount} />
             <Metric label="Hoca" value={coachCount} />
@@ -242,7 +242,7 @@ export default function AdminPage() {
 function SidebarButton({ active, count, label, onClick }: { active: boolean; count: number; label: string; onClick: () => void }) {
   return (
     <button
-      className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-md px-4 text-left text-sm font-bold transition ${
+      className={`flex min-h-12 shrink-0 items-center justify-between gap-3 rounded-md px-4 text-left text-sm font-bold transition lg:w-full ${
         active ? "bg-blue-400 text-blue-950" : "text-slate-300 hover:bg-white/10"
       }`}
       onClick={onClick}
@@ -256,7 +256,7 @@ function SidebarButton({ active, count, label, onClick }: { active: boolean; cou
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
+    <div className="rounded-lg border border-white/10 bg-white/[0.05] p-4 sm:p-5">
       <p className="text-sm text-slate-300">{label}</p>
       <p className="mt-2 text-3xl font-bold">{value}</p>
     </div>
@@ -310,9 +310,9 @@ function ProfileList({
       {visibleProfiles.length ? (
         <div className="space-y-3">
           {visibleProfiles.map((profile) => (
-            <div className="rounded-md bg-white/[0.05] p-3" key={profile.id}>
+            <div className="min-w-0 rounded-md bg-white/[0.05] p-3" key={profile.id}>
               <p className="font-semibold">{profile.ad_soyad || "İsimsiz kullanıcı"}</p>
-              <p className="text-sm text-slate-300">
+              <p className="break-words text-sm text-slate-300">
                 {profile.email || "-"} - {profile.rol || "-"}
               </p>
               <button
@@ -346,9 +346,9 @@ function RequestList({
   return (
     <div className="space-y-3">
       {requests.map((request) => (
-        <div className="rounded-md bg-white/[0.05] p-3" key={request.id}>
+        <div className="min-w-0 rounded-md bg-white/[0.05] p-3" key={request.id}>
           <p className="font-semibold">{request.profil?.ad_soyad || "İsimsiz kullanıcı"}</p>
-          <p className="text-sm text-slate-300">
+          <p className="break-words text-sm text-slate-300">
             {request.profil?.email || "-"} - {request.durum || "-"}
           </p>
           {request.durum === "bekliyor" ? (
@@ -395,7 +395,7 @@ function EmptyState({ text }: { text: string }) {
 
 function Panel({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
+    <section className="min-w-0 rounded-lg border border-white/10 bg-white/[0.05] p-4 sm:p-5">
       <h2 className="text-xl font-bold">{title}</h2>
       <div className="mt-4 max-h-[520px] overflow-auto pr-1">{children}</div>
     </section>

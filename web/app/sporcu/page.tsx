@@ -605,10 +605,10 @@ export default function SporcuPage() {
     <DashboardLayout
       accent="cyan"
       sidebar={
-        <div className="grid gap-2">
+        <div className="flex gap-2 lg:grid">
           {tabs.map((tab) => (
             <button
-              className={`h-11 rounded-md px-4 text-left text-sm font-bold transition ${
+              className={`h-11 shrink-0 rounded-md px-4 text-left text-sm font-bold transition lg:w-full ${
                 activeTab === tab.id
                   ? "bg-cyan-400 text-slate-950"
                   : "text-slate-300 hover:bg-white/10"
@@ -628,7 +628,7 @@ export default function SporcuPage() {
       <Status text={message} />
 
       <div>
-          <div className="grid gap-4 md:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Metric label="Kayıtlı antrenman" value={completedTrainingCount} />
             <Metric label="Toplam tekrar" value={totals.toplam} />
             <Metric label="Doğru tekrar" value={totals.dogru} />
@@ -638,7 +638,7 @@ export default function SporcuPage() {
 
           <div className="mt-6">
           {activeTab === "ozet" && (
-        <div className="grid gap-4 lg:grid-cols-[1.1fr_.9fr]">
+        <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
           <Panel title="Bugünkü">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <MiniStat label="Aktif program" value={activePrograms.length} />
@@ -712,7 +712,7 @@ export default function SporcuPage() {
           )}
 
           {activeTab === "profil" && profile && (
-        <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_380px]">
+        <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
           <Panel title="Profilim">
             <Status text={profileMessage} />
             <ProfileForm disabled={isSaving} onSubmit={saveProfile} profile={profile} />
@@ -1281,7 +1281,7 @@ function CameraTraining({
   }
 
   return (
-    <section className="grid gap-4 xl:grid-cols-[1fr_460px]">
+    <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_460px]">
       <div>
         <div className="mb-4 grid gap-3 rounded-lg border border-white/10 bg-white/[0.05] p-4 md:grid-cols-[1fr_180px_210px]">
           <label className="block">
@@ -1715,8 +1715,8 @@ function TrainingList({
   if (!trainings.length) return <Empty text="Henüz antrenman kaydı yok." />;
 
   return (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full min-w-[760px] table-fixed border-separate border-spacing-y-2 text-left text-sm">
+    <div className="mt-4 overflow-x-auto pb-2">
+      <table className="w-full min-w-[680px] table-fixed border-separate border-spacing-y-2 text-left text-sm">
         <colgroup>
           <col className="w-[24%]" />
           <col className="w-[22%]" />
@@ -2752,7 +2752,7 @@ function CounterBox({ label, value }: { label: string; value: number }) {
 
 function Panel({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.05] p-5">
+    <section className="mt-5 min-w-0 rounded-lg border border-white/10 bg-white/[0.05] p-4 sm:mt-6 sm:p-5">
       <h2 className="text-xl font-bold">{title}</h2>
       {children}
     </section>

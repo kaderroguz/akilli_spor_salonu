@@ -74,22 +74,22 @@ export function DashboardLayout({
             <div className="absolute right-0 top-0 h-56 w-2/5 bg-blue-300/8 [clip-path:polygon(18%_0,100%_0,100%_72%,0_100%)]" />
           </>
         ) : null}
-        <div className="relative grid min-h-screen bg-white/[0.03] lg:grid-cols-[280px_1fr]">
+        <div className="relative grid min-h-screen min-w-0 bg-white/[0.03] lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className={`border-b border-white/10 ${colors.sidebar} p-4 backdrop-blur lg:border-b-0 lg:border-r lg:p-6`}>
-            <Link href="/" className={`text-3xl font-extrabold leading-tight ${colors.link}`}>
+            <Link href="/" className={`block text-2xl font-extrabold leading-tight sm:text-3xl ${colors.link}`}>
               Akıllı Spor Salonu
             </Link>
-            <div className="mt-6">{sidebar}</div>
+            <div className="mt-5 overflow-x-auto lg:mt-6 lg:overflow-visible">{sidebar}</div>
           </aside>
 
-          <div className="px-6 py-8 lg:px-8">
-            <div className="mx-auto max-w-7xl">
+          <div className="min-w-0 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+            <div className="mx-auto max-w-7xl min-w-0">
               <nav className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-white/10 bg-white/[0.04] p-4">
-                <div>
-                  <p className={`text-base font-extrabold uppercase tracking-[0.16em] sm:text-lg ${colors.link}`}>
+                <div className="min-w-0">
+                  <p className={`text-sm font-extrabold uppercase tracking-[0.12em] sm:text-lg sm:tracking-[0.16em] ${colors.link}`}>
                     {subtitle}
                   </p>
-                  <h1 className="mt-2 text-3xl font-bold">{title}</h1>
+                  <h1 className="mt-2 text-2xl font-bold leading-tight sm:text-3xl">{title}</h1>
                 </div>
                 <button
                   className={`shrink-0 self-start rounded-md px-4 py-2 text-sm font-bold transition ${colors.button}`}
@@ -100,7 +100,7 @@ export function DashboardLayout({
                 </button>
               </nav>
 
-              <section className="mt-6">{children}</section>
+              <section className="mt-5 min-w-0 sm:mt-6">{children}</section>
             </div>
           </div>
         </div>
@@ -109,8 +109,8 @@ export function DashboardLayout({
   }
 
   return (
-    <main className={`min-h-screen px-6 py-8 text-white ${colors.main}`}>
-      <div className="mx-auto max-w-7xl">
+    <main className={`min-h-screen px-4 py-6 text-white sm:px-6 sm:py-8 ${colors.main}`}>
+      <div className="mx-auto max-w-7xl min-w-0">
         <nav className="flex flex-wrap items-center justify-between gap-3">
           <Link href="/" className={`text-xl font-extrabold leading-tight ${colors.link}`}>
             Akıllı Spor Salonu
@@ -124,14 +124,14 @@ export function DashboardLayout({
           </button>
         </nav>
 
-        <header className="mt-8 rounded-lg border border-white/10 bg-white/[0.05] p-6">
-          <p className={`text-base font-extrabold uppercase tracking-[0.16em] sm:text-lg ${colors.link}`}>
+        <header className="mt-6 rounded-lg border border-white/10 bg-white/[0.05] p-4 sm:mt-8 sm:p-6">
+          <p className={`text-sm font-extrabold uppercase tracking-[0.12em] sm:text-lg sm:tracking-[0.16em] ${colors.link}`}>
             {subtitle}
           </p>
-          <h1 className="mt-3 text-3xl font-bold">{title}</h1>
+          <h1 className="mt-3 text-2xl font-bold leading-tight sm:text-3xl">{title}</h1>
         </header>
 
-        <section className="mt-6">{children}</section>
+        <section className="mt-5 min-w-0 sm:mt-6">{children}</section>
       </div>
     </main>
   );

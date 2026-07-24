@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 type DashboardLayoutProps = {
@@ -42,6 +43,7 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   const router = useRouter();
   const colors = accentClasses[accent];
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   async function signOut() {
     const supabase = getSupabaseClient();
@@ -75,7 +77,7 @@ export function DashboardLayout({
           </>
         ) : null}
         <div className="relative grid min-h-screen w-full max-w-full min-w-0 bg-white/[0.03] lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className={`border-b border-white/10 ${colors.sidebar} p-4 backdrop-blur lg:border-b-0 lg:border-r lg:p-6`}>
+          <aside className={`hidden border-b border-white/10 ${colors.sidebar} p-4 backdrop-blur lg:block lg:border-b-0 lg:border-r lg:p-6`}>
             <Link href="/" className={`block text-2xl font-extrabold leading-tight sm:text-3xl ${colors.link}`}>
               Akıllı Spor Salonu
             </Link>
@@ -84,6 +86,48 @@ export function DashboardLayout({
 
           <div className="w-full max-w-full min-w-0 px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
             <div className="mx-auto w-full max-w-7xl min-w-0">
+              <div className="mb-4 flex items-center justify-between gap-3 lg:hidden">
+                <Link href="/" className={`text-xl font-extrabold leading-tight ${colors.link}`}>
+                  AkÄ±llÄ± Spor Salonu
+                </Link>
+                <button
+                  aria-expanded={isMenuOpen}
+                  aria-label="Menüyü aç"
+                  className="grid size-11 place-items-center rounded-md border border-white/15 bg-white/[0.06] text-xl font-black text-white"
+                  onClick={() => setIsMenuOpen(true)}
+                  type="button"
+                >
+                  ☰
+                </button>
+              </div>
+
+              {isMenuOpen ? (
+                <div className="fixed inset-0 z-50 lg:hidden">
+                  <button
+                    aria-label="Menüyü kapat"
+                    className="absolute inset-0 bg-slate-950/70"
+                    onClick={() => setIsMenuOpen(false)}
+                    type="button"
+                  />
+                  <aside className={`relative h-full w-[min(82vw,320px)] border-r border-white/10 ${colors.sidebar} p-5 shadow-2xl backdrop-blur-xl`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <Link href="/" className={`block text-2xl font-extrabold leading-tight ${colors.link}`}>
+                        AkÄ±llÄ± Spor Salonu
+                      </Link>
+                      <button
+                        aria-label="Menüyü kapat"
+                        className="grid size-10 place-items-center rounded-md border border-white/15 bg-white/[0.06] text-lg font-black text-white"
+                        onClick={() => setIsMenuOpen(false)}
+                        type="button"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="mt-6" onClick={() => setIsMenuOpen(false)}>{sidebar}</div>
+                  </aside>
+                </div>
+              ) : null}
+
               <nav className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-white/10 bg-white/[0.04] p-4">
                 <div className="min-w-0">
                   <p className={`text-sm font-extrabold uppercase tracking-[0.12em] sm:text-lg sm:tracking-[0.16em] ${colors.link}`}>

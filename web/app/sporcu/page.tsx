@@ -605,10 +605,10 @@ export default function SporcuPage() {
     <DashboardLayout
       accent="cyan"
       sidebar={
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
+        <div className="grid gap-2">
           {tabs.map((tab) => (
             <button
-              className={`h-11 w-full rounded-md px-3 text-center text-sm font-bold transition lg:px-4 lg:text-left ${
+              className={`h-11 w-full rounded-md px-4 text-left text-sm font-bold transition ${
                 activeTab === tab.id
                   ? "bg-cyan-400 text-slate-950"
                   : "text-slate-300 hover:bg-white/10"

@@ -218,6 +218,7 @@ export default function SporcuPage() {
   const [profileMessage, setProfileMessage] = useState("");
   const [coachMessage, setCoachMessage] = useState("");
   const [trainingMessage, setTrainingMessage] = useState("");
+  const [cameraMessage, setCameraMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [coachCode, setCoachCode] = useState("");
   const [selectedExercise, setSelectedExercise] = useState(exercises[0]);
@@ -252,7 +253,7 @@ export default function SporcuPage() {
   }, [filteredTrainings]);
 
   const completedTrainingCount = useMemo(
-    () => trainings.filter((training) => hasRecordedReps(training)).length,
+    () => trainings.filter((training) => hasTrainingRecord(training)).length,
     [trainings],
   );
 
@@ -366,6 +367,12 @@ export default function SporcuPage() {
     return () => window.clearTimeout(timer);
   }, [trainingMessage]);
 
+  useEffect(() => {
+    if (!cameraMessage) return;
+    const timer = window.setTimeout(() => setCameraMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [cameraMessage]);
+
   async function completeProgram(id: number) {
     setIsSaving(true);
     setProgramMessage("");
@@ -468,58 +475,56 @@ export default function SporcuPage() {
   }) {
     if (!profile) return false;
     setIsSaving(true);
-    setActionMessage("");
+    setCameraMessage("");
     try {
       const supabase = getSupabaseClient();
+      const totalReps = Math.max(0, result.toplam);
+      const correctReps = Math.max(0, result.dogru);
       const payload = {
         sporcu_id: profile.id,
         tarih: new Date().toISOString(),
         hareket: result.hareket,
         sure_saniye: result.sure_saniye,
-        toplam: result.toplam,
-        dogru: result.dogru,
+        toplam: totalReps,
+        dogru: correctReps,
         hatali: result.hatali,
-        basari_yuzdesi: null,
+        basari_yuzdesi: totalReps > 0 ? Math.round((correctReps / totalReps) * 10000) / 100 : 0,
         en_sik_form_hatasi:
           result.hatali > 0
             ? result.en_sik_form_hatasi || "Formu düzelt"
             : "Form hatası tespit edilmedi",
       };
-      let { error } = await supabase.from("antrenmanlar").insert(payload);
+      const fallbackPayload = {
+        sporcu_id: payload.sporcu_id,
+        tarih: payload.tarih,
+        hareket: payload.hareket,
+        sure_saniye: payload.sure_saniye,
+        toplam: payload.toplam,
+        dogru: payload.dogru,
+        hatali: payload.hatali,
+        basari_yuzdesi: payload.basari_yuzdesi,
+      };
+      const attempts = [
+        payload,
+        { ...payload, hareket: asciiExerciseName(payload.hareket) },
+        fallbackPayload,
+        { ...fallbackPayload, hareket: asciiExerciseName(payload.hareket) },
+      ];
 
-      if (error) {
-        if (error.message.toLowerCase().includes("en_sik_form_hatasi")) {
-          const { error: fallbackError } = await supabase
-            .from("antrenmanlar")
-            .insert({
-              sporcu_id: payload.sporcu_id,
-              tarih: payload.tarih,
-              hareket: payload.hareket,
-              sure_saniye: payload.sure_saniye,
-              toplam: payload.toplam,
-              dogru: payload.dogru,
-              hatali: payload.hatali,
-              basari_yuzdesi: payload.basari_yuzdesi,
-            });
-          if (fallbackError) throw fallbackError;
-        } else if (error.message.toLowerCase().includes("hareket")) {
-          const asciiPayload = {
-            ...payload,
-            hareket: asciiExerciseName(payload.hareket),
-          };
-          const asciiResult = await supabase.from("antrenmanlar").insert(asciiPayload);
-          error = asciiResult.error;
-          if (error) throw error;
-        } else {
-          throw error;
+      let lastError: unknown = null;
+      for (const attempt of attempts) {
+        const { error } = await supabase.from("antrenmanlar").insert(attempt);
+        if (!error) {
+          setCameraMessage("Antrenman sonucu kaydedildi.");
+          await load();
+          return true;
         }
+        lastError = error;
       }
 
-      setActionMessage("Antrenman sonucu kaydedildi.");
-      await load();
-      return true;
+      throw lastError;
     } catch (error) {
-      setActionMessage(formatSupabaseSaveError(error));
+      setCameraMessage(formatSupabaseSaveError(error));
       return false;
     } finally {
       setIsSaving(false);
@@ -646,9 +651,11 @@ export default function SporcuPage() {
 
           {activeTab === "kamera" && profile && (
         <CameraTraining
+          cameraMessage={cameraMessage}
           disabled={isSaving}
           exercise={selectedExercise}
           exercises={exercises}
+          key={selectedExercise}
           onExerciseChange={setSelectedExercise}
           onSave={saveCameraTraining}
           onTargetChange={setTargetReps}
@@ -787,6 +794,7 @@ function TrainingSummary({
 }
 
 function CameraTraining({
+  cameraMessage,
   disabled,
   exercise,
   exercises,
@@ -838,7 +846,7 @@ function CameraTraining({
   const [cameraFacingMode, setCameraFacingMode] = useState<"user" | "environment">("user");
   const [isGuideSpeaking, setIsGuideSpeaking] = useState(false);
   const [isGuidePaused, setIsGuidePaused] = useState(false);
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(true);
   const [isGuidePreviewOpen, setIsGuidePreviewOpen] = useState(false);
 
   const total = correct;
@@ -1175,7 +1183,7 @@ function CameraTraining({
       window.setTimeout(() => setSaveNotice(""), 3500);
     } else {
       setSaveNotice("");
-      setCameraStatus("Kayıt tamamlanamadı. Üstteki hata mesajını kontrol et.");
+      setCameraStatus("Kayıt tamamlanamadı. Bilgi alanındaki hata mesajını kontrol et.");
     }
   }
 
@@ -1399,7 +1407,9 @@ function CameraTraining({
           <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-200">
             Bilgi
           </p>
-          <p className="mt-2 text-sm font-semibold leading-6 text-cyan-50">{cameraStatus}</p>
+          <p className="mt-2 text-sm font-semibold leading-6 text-cyan-50">
+            {cameraMessage || cameraStatus}
+          </p>
           <div className="mt-3 grid gap-2 text-sm text-cyan-50 sm:grid-cols-4 [&>div]:flex [&>div]:min-h-16 [&>div]:flex-col [&>div]:items-start [&>div]:justify-center [&>div]:gap-1 [&>div]:rounded-md [&>div]:border [&>div]:border-cyan-200/15 [&>div]:bg-slate-950/35 [&>div]:px-3 [&>div]:py-2 [&>div_span:first-child]:block [&>div_span:first-child]:text-xs [&>div_span:first-child]:font-semibold [&>div_span:first-child]:leading-none [&>div_span:last-child]:block [&>div_span:last-child]:leading-tight">
             <div className="flex items-center gap-2">
               <span className="text-cyan-100/80">Kamera</span>
@@ -2501,6 +2511,7 @@ function NotificationList({
   onDelete,
   onRead,
 }: {
+  cameraMessage: string;
   disabled: boolean;
   notifications: Notification[];
   onDelete: (id: number) => void;
@@ -2764,8 +2775,13 @@ function sum(items: Training[], key: "toplam" | "dogru" | "hatali") {
   return items.reduce((total, item) => total + Number(item[key] || 0), 0);
 }
 
-function hasRecordedReps(training: Training) {
-  return Number(training.toplam || 0) > 0 || Number(training.dogru || 0) > 0 || Number(training.hatali || 0) > 0;
+function hasTrainingRecord(training: Training) {
+  return (
+    Number(training.sure_saniye || 0) > 0 ||
+    Number(training.toplam || 0) > 0 ||
+    Number(training.dogru || 0) > 0 ||
+    Number(training.hatali || 0) > 0
+  );
 }
 
 function filterTrainingsByDate(trainings: Training[], selectedDate: string) {
@@ -2847,11 +2863,31 @@ function asciiExerciseName(value: string) {
 }
 
 function formatSupabaseSaveError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error || "");
+  const message = getErrorMessage(error);
   if (message.toLowerCase().includes("row-level security")) {
     return "Kayıt eklenemedi. Lütfen yetki ayarlarını kontrol et.";
   }
   return message || "Kayıt tamamlanamadı.";
+}
+
+function getErrorMessage(error: unknown) {
+  if (!error) return "";
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    const parts = [record.message, record.details, record.hint, record.code]
+      .filter((part): part is string | number => typeof part === "string" || typeof part === "number")
+      .map(String)
+      .filter(Boolean);
+    if (parts.length) return parts.join(" ");
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return "";
+    }
+  }
+  return String(error);
 }
 
 function isRecoverablePoseError(error: unknown) {

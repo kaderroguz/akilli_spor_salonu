@@ -628,7 +628,7 @@ export default function SporcuPage() {
       <Status text={message} />
 
       <div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className={activeTab === "kamera" ? "hidden xl:grid xl:grid-cols-5 xl:gap-3" : "grid gap-3 sm:grid-cols-2 xl:grid-cols-5"}>
             <Metric label="Kayıtlı antrenman" value={completedTrainingCount} />
             <Metric label="Toplam tekrar" value={totals.toplam} />
             <Metric label="Doğru tekrar" value={totals.dogru} />
@@ -636,7 +636,7 @@ export default function SporcuPage() {
             <Metric label="Puan" value={totals.puan} />
           </div>
 
-          <div className="mt-6">
+          <div className={activeTab === "kamera" ? "mt-0 xl:mt-6" : "mt-6"}>
           {activeTab === "ozet" && (
         <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
           <Panel title="Bugünkü">
@@ -1283,7 +1283,7 @@ function CameraTraining({
   return (
     <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_460px]">
       <div>
-        <div className="mb-4 grid gap-3 rounded-lg border border-white/10 bg-white/[0.05] p-4 md:grid-cols-[1fr_180px_210px]">
+        <div className="mb-3 grid gap-3 rounded-lg border border-white/10 bg-white/[0.05] p-3 sm:p-4 md:grid-cols-[1fr_180px_210px]">
           <label className="block">
             <span className="text-sm font-semibold text-slate-200">Hareket</span>
             <select
@@ -1329,7 +1329,7 @@ function CameraTraining({
         </div>
 
       <div className="overflow-hidden rounded-lg border border-white/10 bg-black">
-        <div className="relative aspect-[3/4] w-full sm:aspect-video">
+        <div className="relative aspect-[4/5] w-full sm:aspect-video">
           <video
             className="size-full object-cover"
             muted
@@ -1407,14 +1407,14 @@ function CameraTraining({
         </div>
       </div>
 
-        <div className="mt-4 rounded-md border border-cyan-300/20 bg-cyan-300/10 p-3">
+        <div className="mt-3 rounded-md border border-cyan-300/20 bg-cyan-300/10 p-3">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-200">
             Bilgi
           </p>
           <p className="mt-2 text-sm font-semibold leading-6 text-cyan-50">
             {cameraMessage || cameraStatus}
           </p>
-          <div className="mt-3 grid gap-2 text-sm text-cyan-50 sm:grid-cols-4 [&>div]:flex [&>div]:min-h-16 [&>div]:flex-col [&>div]:items-start [&>div]:justify-center [&>div]:gap-1 [&>div]:rounded-md [&>div]:border [&>div]:border-cyan-200/15 [&>div]:bg-slate-950/35 [&>div]:px-3 [&>div]:py-2 [&>div_span:first-child]:block [&>div_span:first-child]:text-xs [&>div_span:first-child]:font-semibold [&>div_span:first-child]:leading-none [&>div_span:last-child]:block [&>div_span:last-child]:leading-tight">
+          <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-cyan-50 sm:grid-cols-4 [&>div]:flex [&>div]:min-h-14 [&>div]:flex-col [&>div]:items-start [&>div]:justify-center [&>div]:gap-1 [&>div]:rounded-md [&>div]:border [&>div]:border-cyan-200/15 [&>div]:bg-slate-950/35 [&>div]:px-3 [&>div]:py-2 [&>div_span:first-child]:block [&>div_span:first-child]:text-xs [&>div_span:first-child]:font-semibold [&>div_span:first-child]:leading-none [&>div_span:last-child]:block [&>div_span:last-child]:leading-tight">
             <div className="flex items-center gap-2">
               <span className="text-cyan-100/80">Kamera</span>
               <span className="font-bold">{isCameraOpen ? "Açık" : "Kapalı"}</span>
@@ -1436,7 +1436,7 @@ function CameraTraining({
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-3">
+        <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
           <MiniStat label="Süre" value={`${elapsed} sn`} />
           <MiniStat label="Hedef" value={`${total}/${target}`} />
           <MiniStat label="Doğru" value={correct} />
@@ -1445,8 +1445,8 @@ function CameraTraining({
           Telefon veya bilgisayar kamerasi ile hareket formu tarayicida analiz edilir.
         </p>
 
-        <div className="sticky bottom-4 z-20 mt-4 rounded-lg border border-white/10 bg-slate-950/90 p-3 shadow-2xl backdrop-blur-xl">
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-10 [&_button]:min-w-0 [&_button]:whitespace-nowrap [&_button]:px-2.5 [&_button]:text-xs 2xl:[&_button]:text-sm">
+        <div className="sticky bottom-3 z-20 mt-3 rounded-lg border border-white/10 bg-slate-950/90 p-2.5 shadow-2xl backdrop-blur-xl sm:bottom-4 sm:p-3">
+          <div className="grid grid-cols-2 gap-2 xl:grid-cols-10 [&_button]:min-w-0 [&_button]:px-2.5 [&_button]:text-xs 2xl:[&_button]:text-sm">
             {!isCameraOpen ? (
               <button
                 className="h-11 rounded-md bg-cyan-400 px-4 font-bold text-slate-950 transition hover:bg-cyan-300 xl:col-span-2"

@@ -1329,7 +1329,7 @@ function CameraTraining({
         </div>
 
       <div className="overflow-hidden rounded-lg border border-white/10 bg-black">
-        <div className="relative aspect-video w-full">
+        <div className="relative aspect-[3/4] w-full sm:aspect-video">
           <video
             className="size-full object-cover"
             muted
@@ -1344,7 +1344,7 @@ function CameraTraining({
               </div>
             </div>
           ) : null}
-          <div className="absolute left-4 top-4 w-[min(19rem,calc(100%-2rem))] rounded-lg border border-white/10 bg-slate-950/85 p-2.5 text-white shadow-xl backdrop-blur">
+          <div className="hidden sm:absolute sm:left-4 sm:top-4 sm:block sm:w-[min(19rem,calc(100%-2rem))] sm:rounded-lg sm:border sm:border-white/10 sm:bg-slate-950/85 sm:p-2.5 sm:text-white sm:shadow-xl sm:backdrop-blur">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200">Sayaç</p>
               <span className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold">
@@ -1521,6 +1521,28 @@ function CameraTraining({
             >
               Bitir
             </button>
+        </div>
+        <div className="border-t border-white/10 bg-slate-950 p-3 text-white sm:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200">SayaÃ§</p>
+            <span className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold">
+              {isTraining ? "Antrenman aktif" : "HazÄ±r"}
+            </span>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <CounterBox label="Toplam" value={total} />
+            <CounterBox label="DoÄŸru" value={correct} />
+          </div>
+          {showPreparationHint ? (
+            <p className="mt-2 rounded-md border border-cyan-300/30 bg-slate-900 p-2 text-xs leading-5">
+              BaÅŸlamadan Ã¶nce canlÄ± rehberdeki doÄŸru duruÅŸu al.
+            </p>
+          ) : null}
+          {formWarning ? (
+            <p className="mt-2 rounded-md border border-rose-300/50 bg-rose-950 p-2 text-xs font-semibold leading-5">
+              {formWarning}
+            </p>
+          ) : null}
         </div>
       </div>
       </div>

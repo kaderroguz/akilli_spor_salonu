@@ -65,6 +65,9 @@ export default function HocaPage() {
   const [assignmentEndDate, setAssignmentEndDate] = useState("");
   const [assignmentNote, setAssignmentNote] = useState("");
   const [assignmentMessage, setAssignmentMessage] = useState("");
+  const [programMessage, setProgramMessage] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [connectionMessage, setConnectionMessage] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -128,30 +131,48 @@ export default function HocaPage() {
     return () => window.clearTimeout(timer);
   }, [assignmentMessage]);
 
+  useEffect(() => {
+    if (!programMessage) return;
+    const timer = window.setTimeout(() => setProgramMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [programMessage]);
+
+  useEffect(() => {
+    if (!notificationMessage) return;
+    const timer = window.setTimeout(() => setNotificationMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [notificationMessage]);
+
+  useEffect(() => {
+    if (!connectionMessage) return;
+    const timer = window.setTimeout(() => setConnectionMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [connectionMessage]);
+
   const approvedConnections = connections.filter((item) => item.durum === "onaylandi");
   const waitingConnections = connections.filter((item) => item.durum !== "onaylandi");
   const selectedAssignmentAthleteId = assignmentAthleteId || approvedConnections[0]?.sporcu_id || "";
 
   async function createProgram(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!coachId) return setMessage("Hoca oturumu bulunamadi.");
-    if (!selectedAssignmentAthleteId) return setMessage("Program atamak icin once onayli bir sporcu gerekli.");
+    if (!coachId) return setAssignmentMessage("Hoca oturumu bulunamadı.");
+    if (!selectedAssignmentAthleteId) return setAssignmentMessage("Program atamak için önce onaylı bir sporcu gerekli.");
 
     const startDate = assignmentStartDate || new Date().toISOString().slice(0, 10);
     const endDate = assignmentEndDate || startDate;
     if (new Date(`${endDate}T00:00:00`) < new Date(`${startDate}T00:00:00`)) {
-      setMessage("Son tarih baslangic tarihinden once olamaz.");
+      setAssignmentMessage("Son tarih başlangıç tarihinden önce olamaz.");
       return;
     }
 
     setIsDeleting(true);
-    setMessage("");
+    setAssignmentMessage("");
     try {
       const supabase = getSupabaseClient();
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       const token = sessionData.session?.access_token;
-      if (!token) throw new Error("Oturum bilgisi bulunamadi.");
+      if (!token) throw new Error("Oturum bilgisi bulunamadı.");
 
       const payload = {
         sporcu_id: selectedAssignmentAthleteId,
@@ -173,14 +194,14 @@ export default function HocaPage() {
         method: "POST",
       });
       const result = (await response.json()) as { error?: string; program?: Program };
-      if (!response.ok || !result.program) throw new Error(result.error || "Program atanamadi.");
+      if (!response.ok || !result.program) throw new Error(result.error || "Program atanamadı.");
 
       setPrograms((items) => [normalizeRelatedProfiles<Program>([result.program])[0], ...items]);
       setAssignmentNote("");
       setAssignmentMessage("Program sporcuya atandı.");
       setProgramTab("planlanan");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Program atanamadi.");
+      setAssignmentMessage(error instanceof Error ? error.message : "Program atanamadı.");
     } finally {
       setIsDeleting(false);
     }
@@ -189,14 +210,15 @@ export default function HocaPage() {
   async function deleteProgram(id: number) {
     if (!window.confirm("Bu program silinsin mi?")) return;
     setIsDeleting(true);
-    setMessage("");
+    setProgramMessage("");
     try {
       const supabase = getSupabaseClient();
       const { error } = await supabase.from("programlar").delete().eq("id", id);
       if (error) throw error;
       setPrograms((items) => items.filter((item) => item.id !== id));
+      setProgramMessage("Program silindi.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Program silinemedi.");
+      setProgramMessage(error instanceof Error ? error.message : "Program silinemedi.");
     } finally {
       setIsDeleting(false);
     }
@@ -205,14 +227,15 @@ export default function HocaPage() {
   async function deleteNotification(id: number) {
     if (!window.confirm("Bu bildirim silinsin mi?")) return;
     setIsDeleting(true);
-    setMessage("");
+    setNotificationMessage("");
     try {
       const supabase = getSupabaseClient();
       const { error } = await supabase.from("bildirimler").delete().eq("id", id);
       if (error) throw error;
       setNotifications((items) => items.filter((item) => item.id !== id));
+      setNotificationMessage("Bildirim silindi.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Bildirim silinemedi.");
+      setNotificationMessage(error instanceof Error ? error.message : "Bildirim silinemedi.");
     } finally {
       setIsDeleting(false);
     }
@@ -220,14 +243,14 @@ export default function HocaPage() {
 
   async function updateConnection(connection: Connection, nextStatus: "onaylandi" | "reddedildi") {
     setIsDeleting(true);
-    setMessage("");
+    setConnectionMessage("");
     try {
-      if (!coachId) throw new Error("Hoca oturumu bulunamadi.");
+      if (!coachId) throw new Error("Hoca oturumu bulunamadı.");
       const supabase = getSupabaseClient();
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       const token = sessionData.session?.access_token;
-      if (!token) throw new Error("Oturum bilgisi bulunamadi.");
+      if (!token) throw new Error("Oturum bilgisi bulunamadı.");
 
       const response = await fetch("/api/hoca/connection-request", {
         body: JSON.stringify({
@@ -241,7 +264,7 @@ export default function HocaPage() {
         method: "POST",
       });
       const result = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(result.error || "Istek guncellenemedi.");
+      if (!response.ok) throw new Error(result.error || "İstek güncellenemedi.");
 
       if (nextStatus === "onaylandi") {
         setConnections((items) =>
@@ -251,16 +274,16 @@ export default function HocaPage() {
               : item,
           ),
         );
-        setMessage("Sporcu istegi onaylandi ve sporcuya bildirim gonderildi.");
+        setConnectionMessage("Sporcu isteği onaylandı ve sporcuya bildirim gönderildi.");
         return;
       }
 
       setConnections((items) =>
         items.filter((item) => item.sporcu_id !== connection.sporcu_id),
       );
-      setMessage("Sporcu istegi reddedildi ve sporcuya bildirim gonderildi.");
+      setConnectionMessage("Sporcu isteği reddedildi ve sporcuya bildirim gönderildi.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Istek guncellenemedi.");
+      setConnectionMessage(error instanceof Error ? error.message : "İstek güncellenemedi.");
     } finally {
       setIsDeleting(false);
     }
@@ -331,6 +354,7 @@ export default function HocaPage() {
 
       {activeTab === "programlar" && (
         <Panel title="Atanan programlar">
+          <Status text={programMessage} />
           <ProgramList
             activeTab={programTab}
             connections={connections}
@@ -344,6 +368,7 @@ export default function HocaPage() {
 
       {activeTab === "bekleyenler" && (
         <Panel title="Bekleyen istekler">
+          <Status text={connectionMessage} />
           <ConnectionList
             connections={waitingConnections}
             disabled={isDeleting}
@@ -356,6 +381,7 @@ export default function HocaPage() {
 
       {activeTab === "bildirimler" && (
         <Panel title="Bildirimler">
+          <Status text={notificationMessage} />
           <NotificationList connections={connections} disabled={isDeleting} notifications={notifications} onDelete={deleteNotification} />
         </Panel>
       )}
@@ -849,6 +875,15 @@ function EmptyState({ text }: { text: string }) {
     <div className="rounded-md border border-white/10 bg-white/[0.04] p-4 text-sm text-slate-300">
       {text}
     </div>
+  );
+}
+
+function Status({ text }: { text: string }) {
+  if (!text) return null;
+  return (
+    <p className="mb-4 rounded-md border border-emerald-300/30 bg-emerald-300/10 p-3 text-sm font-semibold text-emerald-100">
+      {text}
+    </p>
   );
 }
 

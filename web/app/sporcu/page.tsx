@@ -213,6 +213,11 @@ export default function SporcuPage() {
   const [connections, setConnections] = useState<CoachConnection[]>([]);
   const [message, setMessage] = useState("Yükleniyor...");
   const [actionMessage, setActionMessage] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [programMessage, setProgramMessage] = useState("");
+  const [profileMessage, setProfileMessage] = useState("");
+  const [coachMessage, setCoachMessage] = useState("");
+  const [trainingMessage, setTrainingMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [coachCode, setCoachCode] = useState("");
   const [selectedExercise, setSelectedExercise] = useState(exercises[0]);
@@ -325,9 +330,45 @@ export default function SporcuPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!notificationMessage) return;
+    const timer = window.setTimeout(() => setNotificationMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [notificationMessage]);
+
+  useEffect(() => {
+    if (!actionMessage) return;
+    const timer = window.setTimeout(() => setActionMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [actionMessage]);
+
+  useEffect(() => {
+    if (!programMessage) return;
+    const timer = window.setTimeout(() => setProgramMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [programMessage]);
+
+  useEffect(() => {
+    if (!profileMessage) return;
+    const timer = window.setTimeout(() => setProfileMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [profileMessage]);
+
+  useEffect(() => {
+    if (!coachMessage) return;
+    const timer = window.setTimeout(() => setCoachMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [coachMessage]);
+
+  useEffect(() => {
+    if (!trainingMessage) return;
+    const timer = window.setTimeout(() => setTrainingMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [trainingMessage]);
+
   async function completeProgram(id: number) {
     setIsSaving(true);
-    setActionMessage("");
+    setProgramMessage("");
     try {
       const supabase = getSupabaseClient();
       const { error } = await supabase
@@ -335,10 +376,10 @@ export default function SporcuPage() {
         .update({ durum: "tamamlandi" })
         .eq("id", id);
       if (error) throw error;
-      setActionMessage("Program tamamlandı olarak işaretlendi.");
+      setProgramMessage("Program tamamlandı olarak işaretlendi.");
       await load();
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : "Program güncellenemedi.");
+      setProgramMessage(error instanceof Error ? error.message : "Program güncellenemedi.");
     } finally {
       setIsSaving(false);
     }
@@ -347,6 +388,7 @@ export default function SporcuPage() {
   async function markNotificationRead(id: number) {
     setIsSaving(true);
     setActionMessage("");
+    setNotificationMessage("");
     try {
       const supabase = getSupabaseClient();
       const { error } = await supabase
@@ -354,10 +396,10 @@ export default function SporcuPage() {
         .update({ okundu: true })
         .eq("id", id);
       if (error) throw error;
-      setActionMessage("Bildirim okundu olarak işaretlendi.");
+      setNotificationMessage("Bildirim okundu olarak işaretlendi.");
       await load();
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : "Bildirim güncellenemedi.");
+      setNotificationMessage(error instanceof Error ? error.message : "Bildirim güncellenemedi.");
     } finally {
       setIsSaving(false);
     }
@@ -366,7 +408,7 @@ export default function SporcuPage() {
   async function sendCoachRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
-    setActionMessage("");
+    setCoachMessage("");
     try {
       const supabase = getSupabaseClient();
       const { error } = await supabase.rpc("hoca_istegi_gonder", {
@@ -374,10 +416,10 @@ export default function SporcuPage() {
       });
       if (error) throw error;
       setCoachCode("");
-      setActionMessage("Hoca isteği gönderildi.");
+      setCoachMessage("Hoca isteği gönderildi.");
       await load();
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : "Hoca isteği gönderilemedi.");
+      setCoachMessage(error instanceof Error ? error.message : "Hoca isteği gönderilemedi.");
     } finally {
       setIsSaving(false);
     }
@@ -388,7 +430,7 @@ export default function SporcuPage() {
     if (!profile) return;
     const form = new FormData(event.currentTarget);
     setIsSaving(true);
-    setActionMessage("");
+    setProfileMessage("");
     try {
       const supabase = getSupabaseClient();
       const payload = {
@@ -402,15 +444,15 @@ export default function SporcuPage() {
         profil_guncelleme_zamani: new Date().toISOString(),
       };
       if (payload.ad_soyad.length < 2) {
-        setActionMessage("Ad soyad en az 2 karakter olmalı.");
+        setProfileMessage("Ad soyad en az 2 karakter olmalı.");
         return;
       }
       const { error } = await supabase.from("profiles").update(payload).eq("id", profile.id);
       if (error) throw error;
-      setActionMessage("Profil kaydedildi.");
+      setProfileMessage("Profil kaydedildi.");
       await load();
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : "Profil kaydedilemedi.");
+      setProfileMessage(error instanceof Error ? error.message : "Profil kaydedilemedi.");
     } finally {
       setIsSaving(false);
     }
@@ -484,10 +526,42 @@ export default function SporcuPage() {
     }
   }
 
+  async function deleteNotification(notificationId: number) {
+    if (!window.confirm("Bu bildirim silinsin mi?")) return;
+    setIsSaving(true);
+    setActionMessage("");
+    setNotificationMessage("");
+    try {
+      const supabase = getSupabaseClient();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Oturum bilgisi bulunamadi.");
+
+      const response = await fetch("/api/sporcu/notification", {
+        body: JSON.stringify({ notificationId }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        method: "DELETE",
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Bildirim silinemedi.");
+
+      setNotifications((items) => items.filter((item) => item.id !== notificationId));
+      setNotificationMessage("Bildirim silindi.");
+    } catch (error) {
+      setNotificationMessage(error instanceof Error ? error.message : "Bildirim silinemedi.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function deleteTraining(trainingId: number) {
     if (!window.confirm("Bu antrenman sonucu silinsin mi?")) return;
     setIsSaving(true);
-    setActionMessage("");
+    setTrainingMessage("");
     try {
       const supabase = getSupabaseClient();
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -507,9 +581,9 @@ export default function SporcuPage() {
       if (!response.ok) throw new Error(result.error || "Antrenman silinemedi.");
 
       setTrainings((items) => items.filter((item) => item.id !== trainingId));
-      setActionMessage("Antrenman sonucu silindi.");
+      setTrainingMessage("Antrenman sonucu silindi.");
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : "Antrenman silinemedi.");
+      setTrainingMessage(error instanceof Error ? error.message : "Antrenman silinemedi.");
     } finally {
       setIsSaving(false);
     }
@@ -544,7 +618,6 @@ export default function SporcuPage() {
       title={`Merhaba ${profile?.ad_soyad || "Sporcu"}!`}
     >
       <Status text={message} />
-      <Status text={actionMessage} />
 
       <div>
           <div className="grid gap-4 md:grid-cols-5">
@@ -585,6 +658,7 @@ export default function SporcuPage() {
 
           {activeTab === "program" && (
         <Panel title="Programlarım">
+          <Status text={programMessage} />
           <ProgramTabs
             activeTab={programTab}
             disabled={isSaving}
@@ -602,6 +676,7 @@ export default function SporcuPage() {
 
           {activeTab === "sonuclar" && (
         <Panel title="Antrenman sonuçlarım">
+          <Status text={trainingMessage} />
           <TrainingSummary
             disabled={isSaving}
             onDateChange={setTrainingDate}
@@ -616,9 +691,11 @@ export default function SporcuPage() {
 
           {activeTab === "bildirimler" && (
         <Panel title="Hoca bildirimleri">
+          <Status text={notificationMessage} />
           <NotificationList
             disabled={isSaving}
             notifications={notifications}
+            onDelete={deleteNotification}
             onRead={markNotificationRead}
           />
         </Panel>
@@ -627,9 +704,11 @@ export default function SporcuPage() {
           {activeTab === "profil" && profile && (
         <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_380px]">
           <Panel title="Profilim">
+            <Status text={profileMessage} />
             <ProfileForm disabled={isSaving} onSubmit={saveProfile} profile={profile} />
           </Panel>
           <Panel title="Bağlı hocam">
+            <Status text={coachMessage} />
             <CoachPanel
               coachCode={coachCode}
               connections={connections}
@@ -2419,10 +2498,12 @@ function ProgramList({
 function NotificationList({
   disabled,
   notifications,
+  onDelete,
   onRead,
 }: {
   disabled: boolean;
   notifications: Notification[];
+  onDelete: (id: number) => void;
   onRead: (id: number) => void;
 }) {
   if (!notifications.length) return <Empty text="Henüz hocanızdan bildirim gelmedi." />;
@@ -2439,16 +2520,26 @@ function NotificationList({
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-100">{notification.mesaj || ""}</p>
             <p className="mt-2 text-sm text-slate-300">Ödev {notification.odev_no || "-"}</p>
-            {!notification.okundu ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {!notification.okundu ? (
+                <button
+                  className="h-10 rounded-md bg-cyan-400 px-4 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+                  disabled={disabled}
+                  onClick={() => onRead(notification.id)}
+                  type="button"
+                >
+                  Okundu olarak işaretle
+                </button>
+              ) : null}
               <button
-                className="mt-4 h-10 rounded-md bg-cyan-400 px-4 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+                className="h-10 rounded-md border border-white/15 px-4 text-sm font-bold text-slate-200 transition hover:border-rose-300 hover:bg-rose-400 hover:text-rose-950 disabled:opacity-60"
                 disabled={disabled}
-                onClick={() => onRead(notification.id)}
+                onClick={() => onDelete(notification.id)}
                 type="button"
               >
-                Okundu olarak işaretle
+                Sil
               </button>
-            ) : null}
+            </div>
           </article>
         );
       })}

@@ -87,8 +87,8 @@ export function DashboardLayout({
           <div className="w-full max-w-full min-w-0 px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
             <div className="mx-auto w-full max-w-7xl min-w-0">
               <div className="mb-4 flex items-center justify-between gap-3 lg:hidden">
-                <Link href="/" className={`text-xl font-extrabold leading-tight ${colors.link}`}>
-                  AkÄ±llÄ± Spor Salonu
+                <Link href="/" className={`min-w-0 truncate whitespace-nowrap text-lg font-extrabold leading-tight min-[380px]:text-xl ${colors.link}`}>
+                  Akıllı Spor Salonu
                 </Link>
                 <button
                   aria-expanded={isMenuOpen}
@@ -112,7 +112,7 @@ export function DashboardLayout({
                   <aside className={`relative h-full w-[min(82vw,320px)] border-r border-white/10 ${colors.sidebar} p-5 shadow-2xl backdrop-blur-xl`}>
                     <div className="flex items-start justify-between gap-3">
                       <Link href="/" className={`block text-2xl font-extrabold leading-tight ${colors.link}`}>
-                        AkÄ±llÄ± Spor Salonu
+                        Akıllı Spor Salonu
                       </Link>
                       <button
                         aria-label="Menüyü kapat"

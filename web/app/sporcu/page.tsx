@@ -72,6 +72,9 @@ declare global {
         loop: boolean;
         path: string;
         renderer: "svg";
+        rendererSettings?: {
+          preserveAspectRatio?: string;
+        };
       }) => { destroy: () => void };
     };
   }
@@ -803,6 +806,7 @@ function CameraTraining({
   onTargetChange,
   target,
 }: {
+  cameraMessage: string;
   disabled: boolean;
   exercise: string;
   exercises: string[];
@@ -2511,7 +2515,6 @@ function NotificationList({
   onDelete,
   onRead,
 }: {
-  cameraMessage: string;
   disabled: boolean;
   notifications: Notification[];
   onDelete: (id: number) => void;

@@ -82,17 +82,17 @@ export function DashboardLayout({
             <div className="mt-6">{sidebar}</div>
           </aside>
 
-          <div className="px-6 py-8">
+          <div className="px-6 py-8 lg:px-8">
             <div className="mx-auto max-w-7xl">
-              <nav className="flex flex-wrap items-start justify-between gap-4">
+              <nav className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-white/10 bg-white/[0.04] p-4">
                 <div>
-                  <p className={`text-sm font-semibold uppercase tracking-[0.18em] ${colors.link}`}>
+                  <p className={`text-base font-extrabold uppercase tracking-[0.16em] sm:text-lg ${colors.link}`}>
                     {subtitle}
                   </p>
                   <h1 className="mt-2 text-3xl font-bold">{title}</h1>
                 </div>
                 <button
-                  className={`rounded-md px-4 py-2 text-sm font-bold transition ${colors.button}`}
+                  className={`shrink-0 self-start rounded-md px-4 py-2 text-sm font-bold transition ${colors.button}`}
                   onClick={signOut}
                   type="button"
                 >
@@ -125,7 +125,7 @@ export function DashboardLayout({
         </nav>
 
         <header className="mt-8 rounded-lg border border-white/10 bg-white/[0.05] p-6">
-          <p className={`text-sm font-semibold uppercase tracking-[0.18em] ${colors.link}`}>
+          <p className={`text-base font-extrabold uppercase tracking-[0.16em] sm:text-lg ${colors.link}`}>
             {subtitle}
           </p>
           <h1 className="mt-3 text-3xl font-bold">{title}</h1>

@@ -32,6 +32,8 @@ export default function AdminPage() {
   const [requests, setRequests] = useState<RoleRequest[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState("Yükleniyor...");
+  const [userMessage, setUserMessage] = useState("");
+  const [requestMessage, setRequestMessage] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -91,6 +93,18 @@ export default function AdminPage() {
     load();
   }, [router]);
 
+  useEffect(() => {
+    if (!userMessage) return;
+    const timer = window.setTimeout(() => setUserMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [userMessage]);
+
+  useEffect(() => {
+    if (!requestMessage) return;
+    const timer = window.setTimeout(() => setRequestMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [requestMessage]);
+
   const athleteCount = profiles.filter((item) => item.rol === "sporcu").length;
   const coachCount = profiles.filter((item) => item.rol === "hoca").length;
   const waitingRequestCount = requests.filter((item) => item.durum === "bekliyor").length;
@@ -100,7 +114,7 @@ export default function AdminPage() {
     if (!window.confirm(`${label} kaydı silinsin mi?`)) return;
 
     setIsDeleting(true);
-    setMessage("");
+    setUserMessage("");
     try {
       const supabase = getSupabaseClient();
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -121,8 +135,9 @@ export default function AdminPage() {
 
       setProfiles((items) => items.filter((item) => item.id !== profile.id));
       setRequests((items) => items.filter((item) => item.profil?.email !== profile.email));
+      setUserMessage("Kullanıcı kaydı silindi.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Kullanıcı kaydı silinemedi.");
+      setUserMessage(error instanceof Error ? error.message : "Kullanıcı kaydı silinemedi.");
     } finally {
       setIsDeleting(false);
     }
@@ -130,7 +145,7 @@ export default function AdminPage() {
 
   async function updateRoleRequest(request: RoleRequest, nextStatus: "onaylandi" | "reddedildi") {
     setIsDeleting(true);
-    setMessage("");
+    setRequestMessage("");
     try {
       const supabase = getSupabaseClient();
 
@@ -160,9 +175,9 @@ export default function AdminPage() {
           ),
         );
       }
-      setMessage(nextStatus === "onaylandi" ? "Hoca basvurusu onaylandi." : "Hoca basvurusu reddedildi.");
+      setRequestMessage(nextStatus === "onaylandi" ? "Hoca başvurusu onaylandı." : "Hoca başvurusu reddedildi.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Basvuru guncellenemedi.");
+      setRequestMessage(error instanceof Error ? error.message : "Başvuru güncellenemedi.");
     } finally {
       setIsDeleting(false);
     }
@@ -199,6 +214,7 @@ export default function AdminPage() {
 
       {activeTab === "kullanicilar" && (
         <Panel title="Kullanıcılar">
+          {userMessage ? <Status text={userMessage} /> : null}
           <ProfileList
             activeTab={userTab}
             disabled={isDeleting}
@@ -211,6 +227,7 @@ export default function AdminPage() {
 
       {activeTab === "basvurular" && (
         <Panel title="Hoca başvuruları">
+          {requestMessage ? <Status text={requestMessage} /> : null}
           <RequestList
             disabled={isDeleting}
             onUpdate={updateRoleRequest}
@@ -299,7 +316,7 @@ function ProfileList({
                 {profile.email || "-"} - {profile.rol || "-"}
               </p>
               <button
-                className="mt-3 h-9 rounded-md border border-rose-300/40 px-3 text-sm font-bold text-rose-100 transition hover:bg-rose-300/10 disabled:opacity-60"
+                className="mt-3 h-9 rounded-md border border-white/15 px-3 text-sm font-bold text-slate-200 transition hover:border-rose-300 hover:bg-rose-400 hover:text-rose-950 disabled:opacity-60"
                 disabled={disabled}
                 onClick={() => onDelete(profile)}
                 type="button"
@@ -345,7 +362,7 @@ function RequestList({
                 Onayla
               </button>
               <button
-                className="h-9 rounded-md border border-rose-300/40 px-3 text-sm font-bold text-rose-100 transition hover:bg-rose-300/10 disabled:opacity-60"
+                className="h-9 rounded-md border border-white/15 px-3 text-sm font-bold text-slate-200 transition hover:border-rose-300 hover:bg-rose-400 hover:text-rose-950 disabled:opacity-60"
                 disabled={disabled}
                 onClick={() => onUpdate(request, "reddedildi")}
                 type="button"
@@ -357,6 +374,14 @@ function RequestList({
         </div>
       ))}
     </div>
+  );
+}
+
+function Status({ text }: { text: string }) {
+  return (
+    <p className="mb-4 rounded-md border border-blue-300/30 bg-blue-300/10 p-3 text-sm font-semibold text-blue-50">
+      {text}
+    </p>
   );
 }
 

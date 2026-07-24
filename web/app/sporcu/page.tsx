@@ -246,6 +246,11 @@ export default function SporcuPage() {
     return { toplam, dogru, hatali, puan };
   }, [filteredTrainings]);
 
+  const completedTrainingCount = useMemo(
+    () => trainings.filter((training) => hasRecordedReps(training)).length,
+    [trainings],
+  );
+
   const load = useCallback(async () => {
     try {
       const supabase = getSupabaseClient();
@@ -512,6 +517,7 @@ export default function SporcuPage() {
 
   const pendingNotifications = notifications.filter((item) => !item.okundu).length;
   const activePrograms = programs.filter((item) => item.durum !== "tamamlandi");
+  const latestFormSummary = normalizeFormError(trainings[0]?.en_sik_form_hatasi);
 
   return (
     <DashboardLayout
@@ -537,12 +543,12 @@ export default function SporcuPage() {
       subtitle="Sporcu Paneli"
       title={`Merhaba ${profile?.ad_soyad || "Sporcu"}!`}
     >
-      {message ? <Status text={message} /> : null}
-      {actionMessage ? <Status text={actionMessage} /> : null}
+      <Status text={message} />
+      <Status text={actionMessage} />
 
       <div>
           <div className="grid gap-4 md:grid-cols-5">
-            <Metric label="Antrenman" value={trainings.length} />
+            <Metric label="Kayıtlı antrenman" value={completedTrainingCount} />
             <Metric label="Toplam tekrar" value={totals.toplam} />
             <Metric label="Doğru tekrar" value={totals.dogru} />
             <Metric label="Hatalı tekrar" value={totals.hatali} />
@@ -553,10 +559,10 @@ export default function SporcuPage() {
           {activeTab === "ozet" && (
         <div className="grid gap-4 lg:grid-cols-[1.1fr_.9fr]">
           <Panel title="Bugünkü">
-            <div className="flex flex-wrap gap-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <MiniStat label="Aktif program" value={activePrograms.length} />
               <MiniStat label="Okunmamış bildirim" value={pendingNotifications} />
-              <MiniStat label="Son form" value={normalizeFormError(trainings[0]?.en_sik_form_hatasi) || "Kayıt yok"} />
+              {latestFormSummary ? <MiniStat label="Son form" value={latestFormSummary} /> : null}
             </div>
           </Panel>
           <Panel title="Son antrenmanlar">
@@ -753,6 +759,8 @@ function CameraTraining({
   const [cameraFacingMode, setCameraFacingMode] = useState<"user" | "environment">("user");
   const [isGuideSpeaking, setIsGuideSpeaking] = useState(false);
   const [isGuidePaused, setIsGuidePaused] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isGuidePreviewOpen, setIsGuidePreviewOpen] = useState(false);
 
   const total = correct;
   const guide = exerciseGuides[exercise] || exerciseGuides.Squat;
@@ -1182,7 +1190,7 @@ function CameraTraining({
   }
 
   return (
-    <section className="grid gap-4 xl:grid-cols-[1fr_390px]">
+    <section className="grid gap-4 xl:grid-cols-[1fr_460px]">
       <div>
         <div className="mb-4 grid gap-3 rounded-lg border border-white/10 bg-white/[0.05] p-4 md:grid-cols-[1fr_180px_210px]">
           <label className="block">
@@ -1278,7 +1286,7 @@ function CameraTraining({
               </div>
             ) : null}
           </div>
-          <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
+          <div className="hidden">
             {!isCameraOpen ? (
               <button
                 className="h-10 rounded-md bg-cyan-400 px-4 text-sm font-bold text-slate-950 shadow-xl transition hover:bg-cyan-300"
@@ -1313,7 +1321,7 @@ function CameraTraining({
             Bilgi
           </p>
           <p className="mt-2 text-sm font-semibold leading-6 text-cyan-50">{cameraStatus}</p>
-          <div className="mt-3 grid gap-2 text-sm text-cyan-50 sm:grid-cols-4">
+          <div className="mt-3 grid gap-2 text-sm text-cyan-50 sm:grid-cols-4 [&>div]:flex [&>div]:min-h-16 [&>div]:flex-col [&>div]:items-start [&>div]:justify-center [&>div]:gap-1 [&>div]:rounded-md [&>div]:border [&>div]:border-cyan-200/15 [&>div]:bg-slate-950/35 [&>div]:px-3 [&>div]:py-2 [&>div_span:first-child]:block [&>div_span:first-child]:text-xs [&>div_span:first-child]:font-semibold [&>div_span:first-child]:leading-none [&>div_span:last-child]:block [&>div_span:last-child]:leading-tight">
             <div className="flex items-center gap-2">
               <span className="text-cyan-100/80">Kamera</span>
               <span className="font-bold">{isCameraOpen ? "Açık" : "Kapalı"}</span>
@@ -1344,10 +1352,28 @@ function CameraTraining({
           Telefon veya bilgisayar kamerasi ile hareket formu tarayicida analiz edilir.
         </p>
 
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="sticky bottom-4 z-20 mt-4 rounded-lg border border-white/10 bg-slate-950/90 p-3 shadow-2xl backdrop-blur-xl">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-10 [&_button]:min-w-0 [&_button]:whitespace-nowrap [&_button]:px-2.5 [&_button]:text-xs 2xl:[&_button]:text-sm">
+            {!isCameraOpen ? (
+              <button
+                className="h-11 rounded-md bg-cyan-400 px-4 font-bold text-slate-950 transition hover:bg-cyan-300 xl:col-span-2"
+                onClick={openCamera}
+                type="button"
+              >
+                Kamerayı aç
+              </button>
+            ) : (
+              <button
+                className="h-11 rounded-md border border-white/20 px-4 font-bold text-slate-100 transition hover:bg-white/10 xl:col-span-2"
+                onClick={closeCamera}
+                type="button"
+              >
+                Kamerayı kapat
+              </button>
+            )}
           {!isTraining ? (
             <button
-              className="h-11 rounded-md bg-cyan-400 px-4 font-bold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+              className="h-11 rounded-md bg-cyan-400 px-4 font-bold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60 xl:col-span-2"
               disabled={!isCameraOpen}
               onClick={startTraining}
               type="button"
@@ -1356,7 +1382,7 @@ function CameraTraining({
             </button>
           ) : (
             <button
-              className="h-11 rounded-md border border-cyan-300/40 px-4 font-bold text-cyan-100 transition hover:bg-cyan-300/10"
+              className="h-11 rounded-md border border-cyan-300/40 px-4 font-bold text-cyan-100 transition hover:bg-cyan-300/10 xl:col-span-2"
               onClick={stopTraining}
               type="button"
             >
@@ -1365,7 +1391,7 @@ function CameraTraining({
           )}
 
           <button
-            className="h-11 rounded-md bg-emerald-400 px-4 font-bold text-emerald-950 transition hover:bg-emerald-300 disabled:opacity-60"
+            className="h-11 rounded-md bg-emerald-400 px-4 font-bold text-emerald-950 transition hover:bg-emerald-300 disabled:opacity-60 xl:col-span-2"
             disabled={disabled}
             onClick={saveTraining}
             type="button"
@@ -1373,18 +1399,41 @@ function CameraTraining({
             Sonucu kaydet
           </button>
           <button
-            className="h-11 rounded-md border border-rose-300/50 px-4 font-bold text-rose-100 transition hover:bg-rose-300/10 disabled:opacity-50"
+            className="hidden"
             disabled={!isCameraOpen}
             onClick={closeCamera}
             type="button"
           >
             Kamerayı kapat
           </button>
+          <button
+            className="h-11 rounded-md border border-cyan-300/40 px-4 font-bold text-cyan-100 transition hover:bg-cyan-300/10 xl:col-span-2"
+            onClick={speakGuide}
+            type="button"
+          >
+            Sesli anlat
+          </button>
+            <button
+              className="h-11 rounded-md border border-rose-300/40 px-4 font-bold text-rose-100 transition hover:bg-rose-300/10 disabled:opacity-50"
+              disabled={!isGuideSpeaking}
+              onClick={pauseGuideNarration}
+              type="button"
+            >
+              Durdur
+            </button>
+            <button
+              className="h-11 rounded-md border border-white/10 px-4 font-bold text-slate-100 transition hover:bg-white/10"
+              onClick={finishGuideNarration}
+              type="button"
+            >
+              Bitir
+            </button>
         </div>
+      </div>
       </div>
 
       <aside className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
-        <div className="overflow-hidden rounded-lg border border-cyan-300/20 bg-slate-950 shadow-2xl">
+        <div className="relative overflow-hidden rounded-lg border border-cyan-300/20 bg-slate-950 shadow-2xl">
           <ExerciseGuideVideo
             correction={correctionGuides[guide.animation]}
             exercise={exercise}
@@ -1392,6 +1441,13 @@ function CameraTraining({
             key={exercise}
             warning={Boolean(formWarning) || simulationMode === "wrong"}
           />
+          <button
+            className="absolute bottom-3 right-3 rounded-md bg-cyan-400 px-3 py-2 text-xs font-black text-slate-950 shadow-xl transition hover:bg-cyan-300"
+            onClick={() => setIsGuidePreviewOpen(true)}
+            type="button"
+          >
+            Büyüt
+          </button>
         </div>
         <div className="mt-3 grid gap-2">
           <button
@@ -1415,44 +1471,56 @@ function CameraTraining({
           </div>
         ) : null}
 
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        <div className="mt-4 rounded-md bg-white/[0.06] p-3">
           <button
-            className="h-10 rounded-md border border-cyan-300/40 px-4 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/10"
-            onClick={speakGuide}
+            className="flex w-full items-center justify-between gap-3 text-left text-sm font-bold text-slate-100"
+            onClick={() => setIsGuideOpen((value) => !value)}
             type="button"
           >
-            Sesli anlat
+            <span>Hareket rehberi</span>
+            <span className="rounded-md bg-white/10 px-2 py-1 text-xs text-cyan-100">
+              {isGuideOpen ? "Gizle" : "Aç"}
+            </span>
           </button>
-          <button
-            className="h-10 rounded-md border border-rose-300/40 px-4 text-sm font-bold text-rose-100 transition hover:bg-rose-300/10 disabled:opacity-50"
-            disabled={!isGuideSpeaking}
-            onClick={pauseGuideNarration}
-            type="button"
-          >
-            Durdur
-          </button>
-          <button
-            className="h-10 rounded-md border border-white/10 px-4 text-sm font-bold text-slate-100 transition hover:bg-white/10"
-            onClick={finishGuideNarration}
-            type="button"
-          >
-            Bitir
-          </button>
+          {isGuideOpen ? (
+            <ol className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+              {guide.steps.map((step, index) => (
+                <li className="flex gap-2" key={step}>
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-cyan-400 text-xs font-black text-slate-950">
+                    {index + 1}
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          ) : null}
         </div>
 
-        <div className="mt-4 rounded-md bg-white/[0.06] p-4">
-          <p className="text-sm font-bold text-slate-100">Hareket rehberi</p>
-          <ol className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-            {guide.steps.map((step, index) => (
-              <li className="flex gap-2" key={step}>
-                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-cyan-400 text-xs font-black text-slate-950">
-                  {index + 1}
-                </span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
+        {isGuidePreviewOpen ? (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/80 p-4 backdrop-blur">
+            <div className="relative w-full max-w-4xl rounded-lg border border-white/10 bg-slate-950 p-4 shadow-2xl">
+              <div className="mb-3 flex items-center justify-between gap-3 pr-24">
+                <p className="text-sm font-black uppercase tracking-[0.14em] text-cyan-200">
+                  Doğru form referansı
+                </p>
+                <button
+                  className="absolute right-4 top-4 z-10 rounded-md bg-white px-3 py-2 text-sm font-black text-slate-950 shadow-xl transition hover:bg-cyan-100"
+                  onClick={() => setIsGuidePreviewOpen(false)}
+                  type="button"
+                >
+                  Kapat
+                </button>
+              </div>
+              <ExerciseGuideVideo
+                correction={correctionGuides[guide.animation]}
+                exercise={exercise}
+                guide={guide}
+                size="large"
+                warning={Boolean(formWarning) || simulationMode === "wrong"}
+              />
+            </div>
+          </div>
+        ) : null}
 
       </aside>
     </section>
@@ -1499,6 +1567,9 @@ function ProgramTabs({
 
   return (
     <>
+      <p className="mt-4 text-sm text-slate-300">
+        Bu sekmeler hoca tarafından verilen programları gösterir; üstteki kayıtlı antrenman sayısı kamera ile kaydedilen sonuçlardan gelir.
+      </p>
       <div className="mt-4 grid gap-2">
         {tabs.map((tab) => (
           <button
@@ -1552,8 +1623,17 @@ function TrainingList({
 
   return (
     <div className="mt-4 overflow-x-auto">
-      <table className="w-full min-w-[840px] border-separate border-spacing-y-2 text-left text-sm">
-        <thead className="text-slate-300">
+      <table className="w-full min-w-[760px] table-fixed border-separate border-spacing-y-2 text-left text-sm">
+        <colgroup>
+          <col className="w-[24%]" />
+          <col className="w-[22%]" />
+          <col className="w-[14%]" />
+          <col className="w-[12%]" />
+          <col className="w-[12%]" />
+          <col className="w-[12%]" />
+          {onDelete ? <col className="w-[14%]" /> : null}
+        </colgroup>
+        <thead className="text-slate-300 [&_th:nth-child(n+4)]:text-center">
           <tr>
             <th className="px-3 py-2">Tarih</th>
             <th className="px-3 py-2">Hareket</th>
@@ -1568,15 +1648,15 @@ function TrainingList({
           {trainings.map((training) => (
             <tr className="bg-white/[0.05]" key={training.id}>
               <td className="rounded-l-md px-3 py-3">{formatDateTime(training.tarih)}</td>
-              <td className="px-3 py-3 font-semibold">{training.hareket || "-"}</td>
+              <td className="truncate px-3 py-3 font-semibold" title={training.hareket || "-"}>{training.hareket || "-"}</td>
               <td className="px-3 py-3">{training.sure_saniye ? `${training.sure_saniye} sn` : "-"}</td>
-              <td className="px-3 py-3">{training.toplam || 0}</td>
-              <td className="px-3 py-3 text-emerald-200">{training.dogru || 0}</td>
-              <td className={onDelete ? "px-3 py-3 text-rose-200" : "rounded-r-md px-3 py-3 text-rose-200"}>
+              <td className="px-3 py-3 text-center">{training.toplam || 0}</td>
+              <td className="px-3 py-3 text-center text-emerald-200">{training.dogru || 0}</td>
+              <td className={onDelete ? "px-3 py-3 text-center text-rose-200" : "rounded-r-md px-3 py-3 text-center text-rose-200"}>
                 {training.hatali || 0}
               </td>
               {onDelete ? (
-                <td className="rounded-r-md px-3 py-3">
+                <td className="rounded-r-md px-3 py-3 text-center">
                   <button
                     className="h-9 rounded-md border border-rose-300/40 px-3 text-xs font-bold text-rose-100 transition hover:bg-rose-300/10 disabled:opacity-60"
                     disabled={disabled}
@@ -1599,17 +1679,20 @@ function ExerciseGuideVideo({
   correction,
   exercise,
   guide,
+  size = "normal",
   warning,
 }: {
   correction: string;
   exercise: string;
   guide: (typeof exerciseGuides)[string];
+  size?: "normal" | "large";
   warning: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lottieRef = useRef<HTMLDivElement | null>(null);
   const [fallbackAssetSrc, setFallbackAssetSrc] = useState("");
   const useFallbackGuide = fallbackAssetSrc === guide.asset.src;
+  const mediaFrameSize = size === "large" ? "w-[min(100%,860px)]" : "w-[min(100%,420px)]";
 
   useEffect(() => {
     if (guide.asset.type !== "json" || useFallbackGuide) return;
@@ -1636,6 +1719,9 @@ function ExerciseGuideVideo({
             loop: true,
             path: guide.asset.src,
             renderer: "svg",
+            rendererSettings: {
+              preserveAspectRatio: "xMidYMid slice",
+            },
           });
         })
         .catch(() => setFallbackAssetSrc(guide.asset.src));
@@ -1918,10 +2004,10 @@ function ExerciseGuideVideo({
   }, [correction, exercise, guide, useFallbackGuide, warning]);
 
   return (
-    <div className="relative aspect-[4/3] h-[260px]">
+    <div className={`relative aspect-[4/3] w-full ${size === "large" ? "max-h-[min(70vh,680px)]" : "max-h-[360px]"}`}>
       {!useFallbackGuide && guide.asset.type === "mp4" ? (
         <div className="grid size-full place-items-center bg-slate-950 p-5">
-          <div className="h-full max-h-[220px] w-full max-w-[320px] border border-cyan-300/20 bg-white">
+          <div className={`mx-auto aspect-[4/3] ${mediaFrameSize} overflow-hidden border border-cyan-300/20 bg-white`}>
             <video
               aria-label={`${exercise} doğru form videosu`}
               autoPlay
@@ -1935,25 +2021,29 @@ function ExerciseGuideVideo({
           </div>
         </div>
       ) : !useFallbackGuide ? (
-        <div
-          aria-label={`${exercise} doğru form animasyonu`}
-          className="grid size-full place-items-center bg-slate-950 p-5 [&_svg]:h-full [&_svg]:max-h-[220px] [&_svg]:w-full [&_svg]:max-w-[320px]"
-          ref={lottieRef}
-          role="img"
-        />
+        <div className="grid size-full place-items-center bg-slate-950 p-5">
+          <div
+            aria-label={`${exercise} doğru form animasyonu`}
+            className={`mx-auto grid aspect-[4/3] ${mediaFrameSize} place-items-center overflow-hidden bg-white [&_svg]:mx-auto [&_svg]:block [&_svg]:h-full [&_svg]:w-full [&_svg]:scale-125 [&_svg]:object-cover`}
+            ref={lottieRef}
+            role="img"
+          />
+        </div>
       ) : (
         <div className="grid size-full place-items-center bg-slate-950 p-5">
+          <div className={`mx-auto aspect-[4/3] ${mediaFrameSize} overflow-hidden bg-white`}>
           <canvas
             aria-label={`${exercise} canlı hareket rehberi`}
-            className="h-full max-h-[220px] w-full max-w-[320px]"
+            className="size-full"
             height={360}
             ref={canvasRef}
             role="img"
             width={480}
           />
+          </div>
         </div>
       )}
-      <div className="absolute right-3 top-3 flex items-center gap-2 rounded-md bg-slate-950/80 px-2 py-1 text-xs font-bold text-cyan-100">
+      <div className="absolute right-3 top-3 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-md bg-slate-950/85 px-3 py-1.5 text-xs font-bold text-cyan-100 shadow-lg">
         <span className="size-2 rounded-full bg-emerald-300" />
         {!useFallbackGuide && guide.asset.type === "mp4"
           ? "Doğru video"
@@ -2315,7 +2405,7 @@ function ProgramList({
                   onClick={() => onComplete(program.id)}
                   type="button"
                 >
-                  Tamamlandı olarak işaretle
+                  Programı tamamlandı işaretle
                 </button>
               </div>
             ) : null}
@@ -2519,10 +2609,29 @@ function Metric({ label, value }: { label: string; value: number | string }) {
 }
 
 function MiniStat({ label, value }: { label: string; value: number | string }) {
+  const targetMatch = typeof value === "string" ? value.match(/^(\d+)\/(\d+)$/) : null;
+  const isCompleteTarget = label === "Hedef" && targetMatch ? Number(targetMatch[1]) >= Number(targetMatch[2]) : false;
+  const isTextValue = typeof value === "string" && !/^\d+(\/\d+)?(\s\w+)?$/.test(value);
+
   return (
-    <div className="min-w-[130px] flex-1 rounded-md bg-white/[0.06] p-3">
-      <p className="break-words text-xs font-semibold leading-5 text-slate-300">{label}</p>
-      <p className="mt-2 truncate text-2xl font-bold">{value}</p>
+    <div
+      className={`min-h-24 rounded-md p-3 transition ${
+        isCompleteTarget
+          ? "border border-emerald-300/30 bg-emerald-300/15 text-emerald-50"
+          : "bg-white/[0.06]"
+      }`}
+    >
+      <p className={`min-h-10 text-xs font-semibold leading-5 ${isCompleteTarget ? "text-emerald-100" : "text-slate-300"}`}>{label}</p>
+      <p
+        className={`mt-2 font-bold ${
+          isTextValue
+            ? "line-clamp-3 break-words text-sm leading-5"
+            : "truncate text-xl leading-7"
+        }`}
+        title={String(value)}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -2545,10 +2654,13 @@ function Panel({ children, title }: { children: React.ReactNode; title: string }
   );
 }
 
-function Status({ text }: { text: string }) {
+function Status({ text }: { text: unknown }) {
+  const safeText = typeof text === "string" ? text.trim() : "";
+  if (!safeText || safeText === "[object Object]" || safeText.toLowerCase() === "object object") return null;
+
   return (
     <p className="mb-4 rounded-md border border-cyan-300/30 bg-cyan-300/10 p-3 text-sm text-cyan-50">
-      {text}
+      {safeText}
     </p>
   );
 }
@@ -2559,6 +2671,10 @@ function Empty({ text }: { text: string }) {
 
 function sum(items: Training[], key: "toplam" | "dogru" | "hatali") {
   return items.reduce((total, item) => total + Number(item[key] || 0), 0);
+}
+
+function hasRecordedReps(training: Training) {
+  return Number(training.toplam || 0) > 0 || Number(training.dogru || 0) > 0 || Number(training.hatali || 0) > 0;
 }
 
 function filterTrainingsByDate(trainings: Training[], selectedDate: string) {
@@ -2597,7 +2713,8 @@ function mostCommon(values: string[]) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
 }
 
-function normalizeFormError(value: string | null | undefined) {
+function normalizeFormError(value: unknown) {
+  if (typeof value !== "string" && typeof value !== "number") return "";
   const text = String(value || "").trim();
   if (!text) return "";
   const lowerText = text.toLocaleLowerCase("tr-TR");

@@ -162,49 +162,69 @@ export function LoginForm() {
   return (
     <div className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[1fr_440px]">
       <section className="text-center lg:text-left">
-        <p className="text-2xl font-black uppercase tracking-[0.18em] text-emerald-200 sm:text-3xl">
+        <p className="text-4xl font-black uppercase text-emerald-200 sm:text-5xl">
           Akıllı Spor Salonu
         </p>
-        <h1 className="mx-auto mt-5 max-w-xl text-balance text-3xl font-black leading-tight text-white lg:mx-0">
+        <h1 className="mx-auto mt-5 max-w-xl text-balance text-xl font-semibold leading-snug text-white/90 sm:text-2xl lg:mx-0">
           {roleHints[selectedRole]}
         </h1>
-        <div className="mx-auto mt-8 grid max-w-xl grid-cols-3 gap-3 lg:mx-0">
-          <div className="border border-white/15 bg-white/10 p-3 backdrop-blur">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-100">Takip</p>
-            <p className="mt-2 text-2xl font-black">Canlı</p>
+        <div className="mx-auto mt-8 grid max-w-xl gap-3 rounded-lg border border-white/15 bg-white/10 p-2 backdrop-blur md:grid-cols-3 lg:mx-0">
+          <div className="rounded-md border border-white/10 bg-slate-950/30 p-4 text-left">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-cyan-300/15 text-sm font-black text-cyan-100">
+              01
+            </span>
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-cyan-100">Takip</p>
+            <p className="mt-1 text-2xl font-black leading-none text-white">Canlı</p>
+            <p className="mt-3 text-sm leading-5 text-slate-300">Kamera ile tekrar ve form durumunu anlık izle.</p>
           </div>
-          <div className="border border-white/15 bg-white/10 p-3 backdrop-blur">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-100">Program</p>
-            <p className="mt-2 text-2xl font-black">Hedefli</p>
+          <div className="rounded-md border border-white/10 bg-slate-950/30 p-4 text-left">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-emerald-300/15 text-sm font-black text-emerald-100">
+              02
+            </span>
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-cyan-100">Program</p>
+            <p className="mt-1 text-2xl font-black leading-none text-white">Hedefli</p>
+            <p className="mt-3 text-sm leading-5 text-slate-300">Hoca planlarını, ödevleri ve tekrar hedeflerini takip et.</p>
           </div>
-          <div className="border border-white/15 bg-white/10 p-3 backdrop-blur">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-100">Salon</p>
-            <p className="mt-2 text-2xl font-black">Akıllı</p>
+          <div className="rounded-md border border-white/10 bg-slate-950/30 p-4 text-left">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white/15 text-sm font-black text-white">
+              03
+            </span>
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-cyan-100">Salon</p>
+            <p className="mt-1 text-2xl font-black leading-none text-white">Akıllı</p>
+            <p className="mt-3 text-sm leading-5 text-slate-300">Sonuçlarını panelde topla, gelişimini net gör.</p>
           </div>
         </div>
       </section>
 
-      <section className="rounded-lg border border-white/20 bg-slate-950/72 p-5 shadow-2xl backdrop-blur-xl">
-        <div className="grid grid-cols-2 gap-2 rounded-lg bg-white/10 p-1">
+      <section className="rounded-lg border border-white/10 bg-white/[0.08] p-5 shadow-[0_24px_80px_rgba(2,6,23,0.45)] backdrop-blur-2xl">
+        <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-950/30 p-1">
           <button
-            className={`rounded-md px-4 py-3 text-sm font-semibold ${mode === "giris" ? "bg-cyan-400 text-slate-950" : "text-slate-300"}`}
+            className={`rounded-md px-4 py-3 text-sm font-semibold transition ${
+              mode === "giris"
+                ? "bg-cyan-300/15 text-cyan-50 shadow-sm ring-1 ring-cyan-200/20"
+                : "text-slate-300 hover:bg-white/10 hover:text-white"
+            }`}
             onClick={() => setMode("giris")}
             type="button"
           >
-            Giriş Yap
+            Oturum
           </button>
           <button
-            className={`rounded-md px-4 py-3 text-sm font-semibold ${mode === "kayit" ? "bg-cyan-400 text-slate-950" : "text-slate-300"}`}
+            className={`rounded-md px-4 py-3 text-sm font-semibold transition ${
+              mode === "kayit"
+                ? "bg-cyan-300/15 text-cyan-50 shadow-sm ring-1 ring-cyan-200/20"
+                : "text-slate-300 hover:bg-white/10 hover:text-white disabled:hover:bg-transparent disabled:hover:text-slate-300"
+            }`}
             onClick={() => setMode("kayit")}
             disabled={selectedRole === "admin"}
             type="button"
           >
-            Kayıt Ol
+            Yeni Hesap
           </button>
         </div>
 
         <div className="mx-auto mt-4 w-full max-w-56 text-center">
-          <p className="text-sm font-semibold text-slate-200">Giriş türü</p>
+          <p className="text-sm font-semibold text-slate-200">Hesap rolü</p>
           <select
             className="mt-2 h-9 w-full rounded-md border border-white/10 bg-white px-2 text-center text-sm font-bold text-slate-950 outline-none ring-cyan-300 focus:ring-2"
             onChange={(event) => {
@@ -258,6 +278,17 @@ export function LoginForm() {
               value={password}
             />
           </label>
+          {mode === "giris" && (
+            <div className="-mt-1 mb-2 flex justify-end pr-1">
+              <button
+                className="text-sm font-semibold text-cyan-200 transition hover:text-cyan-100"
+                onClick={resetPassword}
+                type="button"
+              >
+                Şifremi unuttum
+              </button>
+            </div>
+          )}
 
           <button
             className="h-12 w-full rounded-md bg-cyan-400 px-4 font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
@@ -267,14 +298,6 @@ export function LoginForm() {
             {isLoading ? "İşleniyor..." : mode === "giris" ? "Giriş yap" : "Hesap oluştur"}
           </button>
         </form>
-
-        <button
-          className="mt-4 text-sm font-semibold text-cyan-200"
-          onClick={resetPassword}
-          type="button"
-        >
-          Şifremi unuttum
-        </button>
 
         {message && (
           <p className="mt-4 rounded-md border border-cyan-300/30 bg-cyan-300/10 p-3 text-sm text-cyan-50">

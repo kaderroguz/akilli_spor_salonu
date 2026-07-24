@@ -51,7 +51,7 @@ export function DashboardLayout({
 
   if (sidebar) {
     return (
-      <main className={`relative min-h-screen overflow-hidden text-white ${colors.main}`}>
+      <main className={`relative min-h-screen w-full max-w-full overflow-x-hidden text-white ${colors.main}`}>
         {accent === "cyan" ? (
           <>
             <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(8,47,73,0.92)_0%,rgba(14,116,144,0.72)_34%,rgba(15,23,42,0.86)_68%,rgba(20,83,45,0.72)_100%)]" />
@@ -74,16 +74,16 @@ export function DashboardLayout({
             <div className="absolute right-0 top-0 h-56 w-2/5 bg-blue-300/8 [clip-path:polygon(18%_0,100%_0,100%_72%,0_100%)]" />
           </>
         ) : null}
-        <div className="relative grid min-h-screen min-w-0 bg-white/[0.03] lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="relative grid min-h-screen w-full max-w-full min-w-0 bg-white/[0.03] lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className={`border-b border-white/10 ${colors.sidebar} p-4 backdrop-blur lg:border-b-0 lg:border-r lg:p-6`}>
             <Link href="/" className={`block text-2xl font-extrabold leading-tight sm:text-3xl ${colors.link}`}>
               Akıllı Spor Salonu
             </Link>
-            <div className="mt-5 overflow-x-auto lg:mt-6 lg:overflow-visible">{sidebar}</div>
+            <div className="mt-5 lg:mt-6">{sidebar}</div>
           </aside>
 
-          <div className="min-w-0 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-            <div className="mx-auto max-w-7xl min-w-0">
+          <div className="w-full max-w-full min-w-0 px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
+            <div className="mx-auto w-full max-w-7xl min-w-0">
               <nav className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-white/10 bg-white/[0.04] p-4">
                 <div className="min-w-0">
                   <p className={`text-sm font-extrabold uppercase tracking-[0.12em] sm:text-lg sm:tracking-[0.16em] ${colors.link}`}>

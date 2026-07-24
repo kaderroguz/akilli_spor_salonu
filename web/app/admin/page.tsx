@@ -189,7 +189,7 @@ export default function AdminPage() {
       sidebar={
         <div>
           <p className="text-lg font-extrabold text-blue-200">Admin Menüsü</p>
-          <div className="mt-4 flex gap-2 lg:grid">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
             <SidebarButton active={activeTab === "ozet"} count={profiles.length} label="Ana Sayfa" onClick={() => setActiveTab("ozet")} />
             <SidebarButton active={activeTab === "kullanicilar"} count={profiles.length} label="Kullanıcılar" onClick={() => setActiveTab("kullanicilar")} />
             <SidebarButton active={activeTab === "basvurular"} count={waitingRequestCount} label="Hoca başvuruları" onClick={() => setActiveTab("basvurular")} />
@@ -242,7 +242,7 @@ export default function AdminPage() {
 function SidebarButton({ active, count, label, onClick }: { active: boolean; count: number; label: string; onClick: () => void }) {
   return (
     <button
-      className={`flex min-h-12 shrink-0 items-center justify-between gap-3 rounded-md px-4 text-left text-sm font-bold transition lg:w-full ${
+      className={`flex min-h-12 w-full items-center justify-center gap-3 rounded-md px-3 text-center text-sm font-bold transition lg:justify-between lg:px-4 lg:text-left ${
         active ? "bg-blue-400 text-blue-950" : "text-slate-300 hover:bg-white/10"
       }`}
       onClick={onClick}

@@ -293,7 +293,7 @@ export default function HocaPage() {
     <DashboardLayout
       accent="emerald"
       sidebar={
-        <div className="flex gap-2 lg:grid">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
           <SidebarButton active={activeTab === "anasayfa"} label="Ana Sayfa" onClick={() => setActiveTab("anasayfa")} />
           <SidebarButton active={activeTab === "sporcular"} label="Sporcularım" onClick={() => setActiveTab("sporcular")} />
           <SidebarButton active={activeTab === "gorev-atama"} label="Görev atama" onClick={() => setActiveTab("gorev-atama")} />
@@ -399,7 +399,7 @@ function normalizeRelatedProfiles<T extends { profiles?: unknown }>(items: unkno
 function SidebarButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
   return (
     <button
-      className={`flex min-h-12 shrink-0 items-center justify-between gap-3 rounded-md px-4 text-left text-sm font-bold transition lg:w-full ${
+      className={`flex min-h-12 w-full items-center justify-center gap-3 rounded-md px-3 text-center text-sm font-bold transition lg:justify-between lg:px-4 lg:text-left ${
         active ? "bg-emerald-400 text-emerald-950" : "text-slate-300 hover:bg-white/10"
       }`}
       onClick={onClick}

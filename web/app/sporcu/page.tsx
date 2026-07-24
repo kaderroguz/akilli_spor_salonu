@@ -605,10 +605,10 @@ export default function SporcuPage() {
     <DashboardLayout
       accent="cyan"
       sidebar={
-        <div className="flex gap-2 lg:grid">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
           {tabs.map((tab) => (
             <button
-              className={`h-11 shrink-0 rounded-md px-4 text-left text-sm font-bold transition lg:w-full ${
+              className={`h-11 w-full rounded-md px-3 text-center text-sm font-bold transition lg:px-4 lg:text-left ${
                 activeTab === tab.id
                   ? "bg-cyan-400 text-slate-950"
                   : "text-slate-300 hover:bg-white/10"
@@ -627,7 +627,7 @@ export default function SporcuPage() {
     >
       <Status text={message} />
 
-      <div>
+      <div className="w-full max-w-full min-w-0">
           <div className={activeTab === "kamera" ? "hidden xl:grid xl:grid-cols-5 xl:gap-3" : "grid gap-3 sm:grid-cols-2 xl:grid-cols-5"}>
             <Metric label="Kayıtlı antrenman" value={completedTrainingCount} />
             <Metric label="Toplam tekrar" value={totals.toplam} />
@@ -1281,8 +1281,8 @@ function CameraTraining({
   }
 
   return (
-    <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_460px]">
-      <div>
+    <section className="grid w-full max-w-full min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_460px]">
+      <div className="w-full max-w-full min-w-0">
         <div className="mb-3 grid gap-3 rounded-lg border border-white/10 bg-white/[0.05] p-3 sm:p-4 md:grid-cols-[1fr_180px_210px]">
           <label className="block">
             <span className="text-sm font-semibold text-slate-200">Hareket</span>
@@ -1328,7 +1328,7 @@ function CameraTraining({
           </label>
         </div>
 
-      <div className="overflow-hidden rounded-lg border border-white/10 bg-black">
+      <div className="w-full max-w-full overflow-hidden rounded-lg border border-white/10 bg-black">
         <div className="relative aspect-[4/5] w-full sm:aspect-video">
           <video
             className="size-full object-cover"
@@ -1405,6 +1405,28 @@ function CameraTraining({
             </div>
           ) : null}
         </div>
+        <div className="border-t border-white/10 bg-slate-950 p-3 text-white sm:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200">Sayac</p>
+            <span className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold">
+              {isTraining ? "Antrenman aktif" : "Hazir"}
+            </span>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <CounterBox label="Toplam" value={total} />
+            <CounterBox label="Dogru" value={correct} />
+          </div>
+          {showPreparationHint ? (
+            <p className="mt-2 rounded-md border border-cyan-300/30 bg-slate-900 p-2 text-xs leading-5">
+              Baslamadan once canli rehberdeki dogru durusu al.
+            </p>
+          ) : null}
+          {formWarning ? (
+            <p className="mt-2 rounded-md border border-rose-300/50 bg-rose-950 p-2 text-xs font-semibold leading-5">
+              {formWarning}
+            </p>
+          ) : null}
+        </div>
       </div>
 
         <div className="mt-3 rounded-md border border-cyan-300/20 bg-cyan-300/10 p-3">
@@ -1446,7 +1468,7 @@ function CameraTraining({
         </p>
 
         <div className="sticky bottom-3 z-20 mt-3 rounded-lg border border-white/10 bg-slate-950/90 p-2.5 shadow-2xl backdrop-blur-xl sm:bottom-4 sm:p-3">
-          <div className="grid grid-cols-2 gap-2 xl:grid-cols-10 [&_button]:min-w-0 [&_button]:px-2.5 [&_button]:text-xs 2xl:[&_button]:text-sm">
+          <div className="grid grid-cols-2 gap-2 xl:grid-cols-10 [&_button]:min-w-0 [&_button]:whitespace-normal [&_button]:px-2.5 [&_button]:text-xs [&_button]:leading-tight 2xl:[&_button]:text-sm">
             {!isCameraOpen ? (
               <button
                 className="h-11 rounded-md bg-cyan-400 px-4 font-bold text-slate-950 transition hover:bg-cyan-300 xl:col-span-2"
@@ -1522,7 +1544,7 @@ function CameraTraining({
               Bitir
             </button>
         </div>
-        <div className="border-t border-white/10 bg-slate-950 p-3 text-white sm:hidden">
+        <div className="hidden">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200">SayaÃ§</p>
             <span className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold">

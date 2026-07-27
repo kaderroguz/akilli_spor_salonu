@@ -12,9 +12,9 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(request: Request) {
   try {
-    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json(
-        { error: "SUPABASE_SERVICE_ROLE_KEY server ortam degiskeni gerekli." },
+        { error: "Supabase server ortam degiskenleri eksik." },
         { status: 500 },
       );
     }
@@ -32,16 +32,18 @@ export async function POST(request: Request) {
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
-    const serviceClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const dbClient = supabaseServiceRoleKey
+      ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+          auth: { autoRefreshToken: false, persistSession: false },
+        })
+      : userClient;
 
     const { data: authData, error: authError } = await userClient.auth.getUser(token);
     if (authError || !authData.user) {
       return NextResponse.json({ error: "Oturum dogrulanamadi." }, { status: 401 });
     }
 
-    const { data: adminProfile, error: adminError } = await serviceClient
+    const { data: adminProfile, error: adminError } = await dbClient
       .from("profiles")
       .select("rol")
       .eq("id", authData.user.id)
@@ -52,7 +54,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Bu islemi yalnizca admin/yonetici yapabilir." }, { status: 403 });
     }
 
-    const { data: roleRequest, error: requestError } = await serviceClient
+    const { data: roleRequest, error: requestError } = await dbClient
       .from("rol_talepleri")
       .select("id,kullanici_id,durum")
       .eq("id", body.requestId)
@@ -69,14 +71,14 @@ export async function POST(request: Request) {
     const nextStatus = body.action === "accept" ? "onaylandi" : "reddedildi";
 
     if (body.action === "accept") {
-      const { error: profileError } = await serviceClient
+      const { error: profileError } = await dbClient
         .from("profiles")
         .update({ rol: "hoca" })
         .eq("id", roleRequest.kullanici_id);
       if (profileError) throw profileError;
     }
 
-    const { error: updateError } = await serviceClient
+    const { error: updateError } = await dbClient
       .from("rol_talepleri")
       .update({ durum: nextStatus })
       .eq("id", roleRequest.id);

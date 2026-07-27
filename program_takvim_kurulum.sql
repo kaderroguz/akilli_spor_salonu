@@ -49,3 +49,9 @@ create policy "hoca program siler" on public.programlar
 for delete using (
   hoca_id = auth.uid() and public.sporcu_bana_bagli_mi(sporcu_id)
 );
+
+drop policy if exists "sporcu program siler" on public.programlar;
+create policy "sporcu program siler" on public.programlar
+for delete using (
+  sporcu_id = auth.uid()
+);

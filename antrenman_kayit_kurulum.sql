@@ -40,5 +40,11 @@ for update using (
   sporcu_id = auth.uid()
 );
 
+drop policy if exists "sporcu antrenman siler" on public.antrenmanlar;
+create policy "sporcu antrenman siler" on public.antrenmanlar
+for delete using (
+  sporcu_id = auth.uid()
+);
+
 create index if not exists antrenmanlar_sporcu_tarih_idx
 on public.antrenmanlar (sporcu_id, tarih desc);

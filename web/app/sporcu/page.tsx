@@ -577,6 +577,20 @@ export default function SporcuPage() {
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("Oturum bilgisi bulunamadi.");
 
+      const { data: directProgramDelete } = await supabase
+        .from("programlar")
+        .delete()
+        .eq("id", programId)
+        .select("id")
+        .maybeSingle();
+
+      if (directProgramDelete) {
+        setPrograms((items) => items.filter((item) => item.id !== programId));
+        setProgramMessage("Ödev silindi.");
+        await load();
+        return;
+      }
+
       const response = await fetch("/api/sporcu/program", {
         body: JSON.stringify({ programId }),
         headers: {
@@ -608,6 +622,20 @@ export default function SporcuPage() {
       if (sessionError) throw sessionError;
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("Oturum bilgisi bulunamadi.");
+
+      const { data: directTrainingDelete } = await supabase
+        .from("antrenmanlar")
+        .delete()
+        .eq("id", trainingId)
+        .select("id")
+        .maybeSingle();
+
+      if (directTrainingDelete) {
+        setTrainings((items) => items.filter((item) => item.id !== trainingId));
+        setTrainingMessage("Antrenman sonucu silindi.");
+        await load();
+        return;
+      }
 
       const response = await fetch("/api/sporcu/training", {
         body: JSON.stringify({ trainingId }),

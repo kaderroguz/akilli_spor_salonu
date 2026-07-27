@@ -2548,15 +2548,7 @@ function ProgramList({
       {programs.map((program) => {
         const done = program.durum === "tamamlandi";
         return (
-          <article className="relative rounded-lg border border-white/10 bg-white/[0.05] p-4 pr-28" key={program.id}>
-            <button
-              className="absolute right-4 top-4 h-9 rounded-md border border-rose-300/40 px-3 text-xs font-bold text-rose-100 transition hover:bg-rose-300/10 disabled:opacity-60"
-              disabled={disabled}
-              onClick={() => onDelete(program.id)}
-              type="button"
-            >
-              Odevi sil
-            </button>
+          <article className="rounded-lg border border-white/10 bg-white/[0.05] p-4" key={program.id}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-cyan-200">Ödev {program.odev_no || "-"}</p>

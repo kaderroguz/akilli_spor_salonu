@@ -68,6 +68,7 @@ export default function AdminPage() {
           supabase
             .from("rol_talepleri")
             .select("id,kullanici_id,durum,profil:profiles!rol_talepleri_kullanici_id_fkey(ad_soyad,email)")
+            .eq("durum", "bekliyor")
             .order("created_at", { ascending: false })
             .limit(20),
         ]);
@@ -157,26 +158,26 @@ export default function AdminPage() {
     setRequestMessage("");
     try {
       const supabase = getSupabaseClient();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Oturum bilgisi bulunamadı.");
 
-      if (nextStatus === "onaylandi") {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({ rol: "hoca" })
-          .eq("id", request.kullanici_id);
-        if (profileError) throw profileError;
-      }
+      const response = await fetch("/api/admin/role-request", {
+        body: JSON.stringify({
+          action: nextStatus === "onaylandi" ? "accept" : "reject",
+          requestId: request.id,
+        }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Başvuru güncellenemedi.");
 
-      const { error: requestError } = await supabase
-        .from("rol_talepleri")
-        .update({ durum: nextStatus })
-        .eq("id", request.id);
-      if (requestError) throw requestError;
-
-      setRequests((items) =>
-        items.map((item) =>
-          item.id === request.id ? { ...item, durum: nextStatus } : item,
-        ),
-      );
+      setRequests((items) => items.filter((item) => item.id !== request.id));
       if (nextStatus === "onaylandi") {
         setProfiles((items) =>
           items.map((item) =>

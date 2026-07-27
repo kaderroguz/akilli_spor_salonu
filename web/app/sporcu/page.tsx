@@ -566,6 +566,37 @@ export default function SporcuPage() {
     }
   }
 
+  async function deleteProgram(programId: number) {
+    if (!window.confirm("Bu ödev silinsin mi?")) return;
+    setIsSaving(true);
+    setProgramMessage("");
+    try {
+      const supabase = getSupabaseClient();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Oturum bilgisi bulunamadi.");
+
+      const response = await fetch("/api/sporcu/program", {
+        body: JSON.stringify({ programId }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        method: "DELETE",
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Ödev silinemedi.");
+
+      setPrograms((items) => items.filter((item) => item.id !== programId));
+      setProgramMessage("Ödev silindi.");
+    } catch (error) {
+      setProgramMessage(error instanceof Error ? error.message : "Ödev silinemedi.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function deleteTraining(trainingId: number) {
     if (!window.confirm("Bu antrenman sonucu silinsin mi?")) return;
     setIsSaving(true);
@@ -673,6 +704,7 @@ export default function SporcuPage() {
             activeTab={programTab}
             disabled={isSaving}
             onComplete={completeProgram}
+            onDelete={deleteProgram}
             onStart={(program) => {
               setSelectedExercise(program.hareket || exercises[0]);
               setTargetReps(program.hedef_tekrar || 10);
@@ -1668,6 +1700,7 @@ function ProgramTabs({
   activeTab,
   disabled,
   onComplete,
+  onDelete,
   onStart,
   onTabChange,
   programs,
@@ -1675,6 +1708,7 @@ function ProgramTabs({
   activeTab: "tamamlanan" | "tamamlanmayan" | "planlanan";
   disabled: boolean;
   onComplete: (id: number) => void;
+  onDelete: (id: number) => void;
   onStart: (program: Program) => void;
   onTabChange: (tab: "tamamlanan" | "tamamlanmayan" | "planlanan") => void;
   programs: Program[];
@@ -1729,6 +1763,7 @@ function ProgramTabs({
         <ProgramList
           disabled={disabled}
           onComplete={onComplete}
+          onDelete={onDelete}
           onStart={onStart}
           programs={visiblePrograms}
         />
@@ -2496,11 +2531,13 @@ function midpoint(a: PoseLandmark, b: PoseLandmark) {
 function ProgramList({
   disabled,
   onComplete,
+  onDelete,
   onStart,
   programs,
 }: {
   disabled: boolean;
   onComplete: (id: number) => void;
+  onDelete: (id: number) => void;
   onStart: (program: Program) => void;
   programs: Program[];
 }) {
@@ -2511,7 +2548,15 @@ function ProgramList({
       {programs.map((program) => {
         const done = program.durum === "tamamlandi";
         return (
-          <article className="rounded-lg border border-white/10 bg-white/[0.05] p-4" key={program.id}>
+          <article className="relative rounded-lg border border-white/10 bg-white/[0.05] p-4 pr-28" key={program.id}>
+            <button
+              className="absolute right-4 top-4 h-9 rounded-md border border-rose-300/40 px-3 text-xs font-bold text-rose-100 transition hover:bg-rose-300/10 disabled:opacity-60"
+              disabled={disabled}
+              onClick={() => onDelete(program.id)}
+              type="button"
+            >
+              Odevi sil
+            </button>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-cyan-200">Ödev {program.odev_no || "-"}</p>
@@ -2544,8 +2589,27 @@ function ProgramList({
                 >
                   Programı tamamlandı işaretle
                 </button>
+                <button
+                  className="h-10 rounded-md border border-rose-300/40 px-4 text-sm font-bold text-rose-100 transition hover:bg-rose-300/10 disabled:opacity-60"
+                  disabled={disabled}
+                  onClick={() => onDelete(program.id)}
+                  type="button"
+                >
+                  Sil
+                </button>
               </div>
-            ) : null}
+            ) : (
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  className="h-10 rounded-md border border-rose-300/40 px-4 text-sm font-bold text-rose-100 transition hover:bg-rose-300/10 disabled:opacity-60"
+                  disabled={disabled}
+                  onClick={() => onDelete(program.id)}
+                  type="button"
+                >
+                  Sil
+                </button>
+              </div>
+            )}
           </article>
         );
       })}

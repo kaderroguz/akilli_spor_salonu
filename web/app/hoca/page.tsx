@@ -238,8 +238,31 @@ export default function HocaPage() {
     setNotificationMessage("");
     try {
       const supabase = getSupabaseClient();
-      const { error } = await supabase.from("bildirimler").delete().eq("id", id);
-      if (error) throw error;
+      const { data: directDelete, error: directDeleteError } = await supabase
+        .from("bildirimler")
+        .delete()
+        .eq("id", id)
+        .select("id")
+        .maybeSingle();
+
+      if (directDeleteError || !directDelete) {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        const token = sessionData.session?.access_token;
+        if (!token) throw new Error("Oturum bilgisi bulunamadı.");
+
+        const response = await fetch("/api/hoca/notification", {
+          body: JSON.stringify({ notificationId: id }),
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          method: "DELETE",
+        });
+        const result = (await response.json()) as { error?: string };
+        if (!response.ok) throw new Error(result.error || "Bildirim silinemedi.");
+      }
+
       setNotifications((items) => items.filter((item) => item.id !== id));
       setNotificationMessage("Bildirim silindi.");
     } catch (error) {

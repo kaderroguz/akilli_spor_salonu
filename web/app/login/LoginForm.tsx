@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 type Role = "sporcu" | "hoca" | "admin";
@@ -41,6 +41,12 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!message) return;
+    const timer = window.setTimeout(() => setMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -105,7 +111,7 @@ export function LoginForm() {
       if (!profile || !isRole(profile.rol)) {
         await supabase.auth.signOut();
         setMessage(
-          "Giris basarili ama bu hesaba ait panel yetkisi bulunamadi. Hoca/admin hesabiysa yonetici onayi veya profil kaydi gerekli.",
+          "Giriş başarılı ama bu hesaba ait panel yetkisi bulunamadı. Hoca/admin hesabıysa yönetici onayı veya profil kaydı gerekli.",
         );
         return;
       }
@@ -113,7 +119,7 @@ export function LoginForm() {
       if (profile.rol !== selectedRole) {
         await supabase.auth.signOut();
         setMessage(
-          `Bu hesap ${roleLabel(profile.rol)} rolune ait. Lutfen ${roleLabel(profile.rol)} rolunu secerek giris yap.`,
+          `Bu hesap ${roleLabel(profile.rol)} rolüne ait. Lütfen ${roleLabel(profile.rol)} rolünü seçerek giriş yap.`,
         );
         return;
       }
@@ -302,19 +308,19 @@ function formatAuthError(error: unknown) {
   const normalized = message.toLowerCase();
 
   if (normalized.includes("invalid login credentials")) {
-    return "E-posta veya sifre hatali. Bu hesap Supabase'de yoksa once Kayit Ol ile hesap olustur ya da Sifremi unuttum'u kullan.";
+    return "E-posta veya şifre hatalı. Bu hesap Supabase'de yoksa önce Kayıt Ol ile hesap oluştur ya da Şifremi unuttum'u kullan.";
   }
 
   if (normalized.includes("email not confirmed")) {
-    return "E-posta adresin henuz onaylanmamis. Gelen onay baglantisini acip tekrar dene.";
+    return "E-posta adresin henüz onaylanmamış. Gelen onay bağlantısını açıp tekrar dene.";
   }
 
   if (normalized.includes("failed to fetch") || normalized.includes("network")) {
-    return "Supabase'e baglanilamadi. Interneti, .env.local ayarlarini ve Supabase projesinin aktif oldugunu kontrol et.";
+    return "Supabase'e bağlanılamadı. İnterneti, .env.local ayarlarını ve Supabase projesinin aktif olduğunu kontrol et.";
   }
 
   if (normalized.includes("permission denied") || normalized.includes("row-level security")) {
-    return "Giris yapildi ama profil kaydi okunamadi. Supabase profiles tablo izinlerini kontrol et.";
+    return "Giriş yapıldı ama profil kaydı okunamadı. Supabase profiles tablo izinlerini kontrol et.";
   }
 
   return message || "İşlem tamamlanamadı.";
@@ -322,7 +328,7 @@ function formatAuthError(error: unknown) {
 
 function roleLabel(role: Role) {
   const labels: Record<Role, string> = {
-    admin: "Yonetici",
+    admin: "Yönetici",
     hoca: "Hoca",
     sporcu: "Sporcu",
   };

@@ -238,6 +238,16 @@ export default function HocaPage() {
     setNotificationMessage("");
     try {
       const supabase = getSupabaseClient();
+      const { error: rpcError } = await supabase.rpc("hoca_bildirimi_sil", {
+        hedef_bildirim_id: id,
+      });
+
+      if (!rpcError) {
+        setNotifications((items) => items.filter((item) => item.id !== id));
+        setNotificationMessage("Bildirim silindi.");
+        return;
+      }
+
       const { data: directDelete, error: directDeleteError } = await supabase
         .from("bildirimler")
         .delete()

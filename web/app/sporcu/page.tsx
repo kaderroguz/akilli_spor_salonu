@@ -590,6 +590,7 @@ export default function SporcuPage() {
 
       setPrograms((items) => items.filter((item) => item.id !== programId));
       setProgramMessage("Ödev silindi.");
+      await load();
     } catch (error) {
       setProgramMessage(error instanceof Error ? error.message : "Ödev silinemedi.");
     } finally {
@@ -621,6 +622,7 @@ export default function SporcuPage() {
 
       setTrainings((items) => items.filter((item) => item.id !== trainingId));
       setTrainingMessage("Antrenman sonucu silindi.");
+      await load();
     } catch (error) {
       setTrainingMessage(error instanceof Error ? error.message : "Antrenman silinemedi.");
     } finally {

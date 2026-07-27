@@ -40,11 +40,23 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Oturum dogrulanamadi." }, { status: 401 });
     }
 
+    const { data: training, error: trainingError } = await serviceClient
+      .from("antrenmanlar")
+      .select("id,sporcu_id")
+      .eq("id", body.trainingId)
+      .eq("sporcu_id", authData.user.id)
+      .maybeSingle();
+
+    if (trainingError) throw trainingError;
+    if (!training) {
+      return NextResponse.json({ error: "Silinecek antrenman bulunamadi." }, { status: 404 });
+    }
+
     const { error } = await serviceClient
       .from("antrenmanlar")
       .delete()
-      .eq("id", body.trainingId)
-      .eq("sporcu_id", authData.user.id);
+      .eq("id", training.id)
+      .eq("sporcu_id", training.sporcu_id);
 
     if (error) throw error;
 

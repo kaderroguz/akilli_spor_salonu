@@ -40,11 +40,23 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Oturum dogrulanamadi." }, { status: 401 });
     }
 
+    const { data: program, error: programError } = await serviceClient
+      .from("programlar")
+      .select("id,sporcu_id")
+      .eq("id", body.programId)
+      .eq("sporcu_id", authData.user.id)
+      .maybeSingle();
+
+    if (programError) throw programError;
+    if (!program) {
+      return NextResponse.json({ error: "Silinecek odev bulunamadi." }, { status: 404 });
+    }
+
     const { error } = await serviceClient
       .from("programlar")
       .delete()
-      .eq("id", body.programId)
-      .eq("sporcu_id", authData.user.id);
+      .eq("id", program.id)
+      .eq("sporcu_id", program.sporcu_id);
 
     if (error) throw error;
 

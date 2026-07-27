@@ -6,6 +6,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 type Profile = {
+  id: string;
   ad_soyad: string | null;
   email?: string | null;
   hoca_kodu: string | null;
@@ -41,7 +42,7 @@ type Notification = {
   profiles?: { ad_soyad: string | null; email: string | null } | null;
 };
 
-type HocaTab = "anasayfa" | "sporcular" | "gorev-atama" | "programlar" | "bekleyenler" | "bildirimler";
+type HocaTab = "anasayfa" | "sporcular" | "gorev-atama" | "programlar" | "bekleyenler" | "bildirimler" | "profil";
 type ProgramTab = "planlanan" | "tamamlanmayan" | "tamamlanan";
 
 const exercises = ["Squat", "Şınav", "Barfiks", "Aç-Kapa Zıplama", "Gövde Çevirme"];
@@ -68,6 +69,7 @@ export default function HocaPage() {
   const [programMessage, setProgramMessage] = useState("");
   const [notificationMessage, setNotificationMessage] = useState("");
   const [connectionMessage, setConnectionMessage] = useState("");
+  const [profileMessage, setProfileMessage] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -82,7 +84,7 @@ export default function HocaPage() {
 
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("ad_soyad, rol, hoca_kodu")
+          .select("id,ad_soyad,email,rol,hoca_kodu")
           .eq("id", authData.user.id)
           .maybeSingle();
 
@@ -148,6 +150,12 @@ export default function HocaPage() {
     const timer = window.setTimeout(() => setConnectionMessage(""), 5000);
     return () => window.clearTimeout(timer);
   }, [connectionMessage]);
+
+  useEffect(() => {
+    if (!profileMessage) return;
+    const timer = window.setTimeout(() => setProfileMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [profileMessage]);
 
   const approvedConnections = connections.filter((item) => item.durum === "onaylandi");
   const waitingConnections = connections.filter((item) => item.durum !== "onaylandi");
@@ -289,6 +297,39 @@ export default function HocaPage() {
     }
   }
 
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!profile) return;
+    const form = new FormData(event.currentTarget);
+    const fullName = String(form.get("ad_soyad") || "").trim();
+
+    setIsDeleting(true);
+    setProfileMessage("");
+    try {
+      if (fullName.length < 2) {
+        setProfileMessage("Ad soyad en az 2 karakter olmalı.");
+        return;
+      }
+
+      const supabase = getSupabaseClient();
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          ad_soyad: fullName,
+          profil_guncelleme_zamani: new Date().toISOString(),
+        })
+        .eq("id", profile.id);
+
+      if (error) throw error;
+      setProfile((current) => current ? { ...current, ad_soyad: fullName } : current);
+      setProfileMessage("Profil kaydedildi.");
+    } catch (error) {
+      setProfileMessage(error instanceof Error ? error.message : "Profil kaydedilemedi.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <DashboardLayout
       accent="emerald"
@@ -300,6 +341,7 @@ export default function HocaPage() {
           <SidebarButton active={activeTab === "programlar"} label="Atanan programlar" onClick={() => setActiveTab("programlar")} />
           <SidebarButton active={activeTab === "bekleyenler"} label="Bekleyen istekler" onClick={() => setActiveTab("bekleyenler")} />
           <SidebarButton active={activeTab === "bildirimler"} label="Bildirimler" onClick={() => setActiveTab("bildirimler")} />
+          <SidebarButton active={activeTab === "profil"} label="Profil" onClick={() => setActiveTab("profil")} />
         </div>
       }
       subtitle="Hoca Paneli"
@@ -384,6 +426,18 @@ export default function HocaPage() {
           <Status text={notificationMessage} />
           <NotificationList connections={connections} disabled={isDeleting} notifications={notifications} onDelete={deleteNotification} />
         </Panel>
+      )}
+
+      {activeTab === "profil" && profile && (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <Panel title="Profilim">
+            <Status text={profileMessage} />
+            <CoachProfileForm disabled={isDeleting} onSubmit={saveProfile} profile={profile} />
+          </Panel>
+          <Panel title="Hoca kodum">
+            <CoachCodeCard code={profile.hoca_kodu || ""} />
+          </Panel>
+        </div>
       )}
     </DashboardLayout>
   );
@@ -618,6 +672,56 @@ function AssignmentForm({
         type="submit"
       >
         Görevi ata
+      </button>
+    </form>
+  );
+}
+
+function CoachProfileForm({
+  disabled,
+  onSubmit,
+  profile,
+}: {
+  disabled: boolean;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  profile: Profile;
+}) {
+  return (
+    <form className="grid gap-4" onSubmit={onSubmit}>
+      <label className="block">
+        <span className="text-sm font-semibold text-slate-200">Ad soyad</span>
+        <input
+          className="mt-2 h-12 w-full rounded-md border border-white/10 bg-white px-3 text-slate-950 outline-none ring-emerald-300 focus:ring-2"
+          defaultValue={profile.ad_soyad || ""}
+          name="ad_soyad"
+          required
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-semibold text-slate-200">E-posta</span>
+        <input
+          className="mt-2 h-12 w-full rounded-md border border-white/10 bg-white px-3 text-slate-500 outline-none"
+          readOnly
+          value={profile.email || ""}
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-semibold text-slate-200">Rol</span>
+        <input
+          className="mt-2 h-12 w-full rounded-md border border-white/10 bg-white px-3 text-slate-500 outline-none"
+          readOnly
+          value="Hoca"
+        />
+      </label>
+
+      <button
+        className="h-12 rounded-md bg-emerald-400 px-4 font-bold text-emerald-950 transition hover:bg-emerald-300 disabled:opacity-60"
+        disabled={disabled}
+        type="submit"
+      >
+        Profili kaydet
       </button>
     </form>
   );

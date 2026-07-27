@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
@@ -20,7 +20,7 @@ type RoleRequest = {
   profil?: { ad_soyad: string | null; email: string | null } | null;
 };
 
-type AdminTab = "ozet" | "kullanicilar" | "basvurular";
+type AdminTab = "ozet" | "kullanicilar" | "basvurular" | "profil";
 type UserTab = "sporcu" | "hoca";
 
 export default function AdminPage() {
@@ -28,12 +28,14 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>("ozet");
   const [userTab, setUserTab] = useState<UserTab>("sporcu");
   const [adminName, setAdminName] = useState("Yönetici");
+  const [adminProfile, setAdminProfile] = useState<Profile | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [requests, setRequests] = useState<RoleRequest[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState("Yükleniyor...");
   const [userMessage, setUserMessage] = useState("");
   const [requestMessage, setRequestMessage] = useState("");
+  const [profileMessage, setProfileMessage] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -48,7 +50,7 @@ export default function AdminPage() {
 
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("ad_soyad, rol")
+          .select("id,ad_soyad,email,rol,created_at")
           .eq("id", authData.user.id)
           .maybeSingle();
 
@@ -71,6 +73,7 @@ export default function AdminPage() {
         ]);
 
         setAdminName(profileData.ad_soyad || "Yönetici");
+        setAdminProfile(profileData as Profile);
         setProfiles((profilesResult.data as Profile[]) || []);
         const normalizedRequests = ((requestsResult.data || []) as Array<
           Omit<RoleRequest, "profil"> & {
@@ -104,6 +107,12 @@ export default function AdminPage() {
     const timer = window.setTimeout(() => setRequestMessage(""), 5000);
     return () => window.clearTimeout(timer);
   }, [requestMessage]);
+
+  useEffect(() => {
+    if (!profileMessage) return;
+    const timer = window.setTimeout(() => setProfileMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [profileMessage]);
 
   const athleteCount = profiles.filter((item) => item.rol === "sporcu").length;
   const coachCount = profiles.filter((item) => item.rol === "hoca").length;
@@ -183,6 +192,40 @@ export default function AdminPage() {
     }
   }
 
+  async function saveAdminProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!adminProfile) return;
+    const form = new FormData(event.currentTarget);
+    const fullName = String(form.get("ad_soyad") || "").trim();
+
+    setIsDeleting(true);
+    setProfileMessage("");
+    try {
+      if (fullName.length < 2) {
+        setProfileMessage("Ad soyad en az 2 karakter olmalı.");
+        return;
+      }
+
+      const supabase = getSupabaseClient();
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          ad_soyad: fullName,
+          profil_guncelleme_zamani: new Date().toISOString(),
+        })
+        .eq("id", adminProfile.id);
+
+      if (error) throw error;
+      setAdminName(fullName);
+      setAdminProfile((current) => current ? { ...current, ad_soyad: fullName } : current);
+      setProfileMessage("Profil kaydedildi.");
+    } catch (error) {
+      setProfileMessage(error instanceof Error ? error.message : "Profil kaydedilemedi.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <DashboardLayout
       accent="blue"
@@ -193,6 +236,7 @@ export default function AdminPage() {
             <SidebarButton active={activeTab === "ozet"} count={profiles.length} label="Ana Sayfa" onClick={() => setActiveTab("ozet")} />
             <SidebarButton active={activeTab === "kullanicilar"} count={profiles.length} label="Kullanıcılar" onClick={() => setActiveTab("kullanicilar")} />
             <SidebarButton active={activeTab === "basvurular"} count={waitingRequestCount} label="Hoca başvuruları" onClick={() => setActiveTab("basvurular")} />
+            <SidebarButton active={activeTab === "profil"} label="Profil" onClick={() => setActiveTab("profil")} />
           </div>
         </div>
       }
@@ -235,11 +279,18 @@ export default function AdminPage() {
           />
         </Panel>
       )}
+
+      {activeTab === "profil" && adminProfile && (
+        <Panel title="Profilim">
+          {profileMessage ? <Status text={profileMessage} /> : null}
+          <AdminProfileForm disabled={isDeleting} onSubmit={saveAdminProfile} profile={adminProfile} />
+        </Panel>
+      )}
     </DashboardLayout>
   );
 }
 
-function SidebarButton({ active, count, label, onClick }: { active: boolean; count: number; label: string; onClick: () => void }) {
+function SidebarButton({ active, count, label, onClick }: { active: boolean; count?: number; label: string; onClick: () => void }) {
   return (
     <button
       className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-md px-4 text-left text-sm font-bold transition ${
@@ -249,7 +300,9 @@ function SidebarButton({ active, count, label, onClick }: { active: boolean; cou
       type="button"
     >
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      <span className={`shrink-0 rounded-md px-2 py-1 text-xs ${active ? "bg-blue-950/15" : "bg-white/10"}`}>{count}</span>
+      {typeof count === "number" ? (
+        <span className={`shrink-0 rounded-md px-2 py-1 text-xs ${active ? "bg-blue-950/15" : "bg-white/10"}`}>{count}</span>
+      ) : null}
     </button>
   );
 }
@@ -260,6 +313,56 @@ function Metric({ label, value }: { label: string; value: number }) {
       <p className="text-sm text-slate-300">{label}</p>
       <p className="mt-2 text-3xl font-bold">{value}</p>
     </div>
+  );
+}
+
+function AdminProfileForm({
+  disabled,
+  onSubmit,
+  profile,
+}: {
+  disabled: boolean;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  profile: Profile;
+}) {
+  return (
+    <form className="grid gap-4" onSubmit={onSubmit}>
+      <label className="block">
+        <span className="text-sm font-semibold text-slate-200">Ad soyad</span>
+        <input
+          className="mt-2 h-12 w-full rounded-md border border-white/10 bg-white px-3 text-slate-950 outline-none ring-blue-300 focus:ring-2"
+          defaultValue={profile.ad_soyad || ""}
+          name="ad_soyad"
+          required
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-semibold text-slate-200">E-posta</span>
+        <input
+          className="mt-2 h-12 w-full rounded-md border border-white/10 bg-white px-3 text-slate-500 outline-none"
+          readOnly
+          value={profile.email || ""}
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-semibold text-slate-200">Rol</span>
+        <input
+          className="mt-2 h-12 w-full rounded-md border border-white/10 bg-white px-3 text-slate-500 outline-none"
+          readOnly
+          value="Yönetici"
+        />
+      </label>
+
+      <button
+        className="h-12 rounded-md bg-blue-400 px-4 font-bold text-blue-950 transition hover:bg-blue-300 disabled:opacity-60"
+        disabled={disabled}
+        type="submit"
+      >
+        Profili kaydet
+      </button>
+    </form>
   );
 }
 

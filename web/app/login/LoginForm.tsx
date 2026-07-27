@@ -100,31 +100,20 @@ export function LoginForm() {
         throw profileError;
       }
 
-      let profile = profileData as Profile | null;
-
-      if (!profile && selectedRole === "sporcu") {
-        const { data: createdProfile, error: createProfileError } = await supabase
-          .from("profiles")
-          .insert({
-            id: data.user.id,
-            ad_soyad: String(data.user.user_metadata?.ad_soyad || "Sporcu"),
-            email: data.user.email || normalizedEmail,
-            rol: "sporcu",
-          })
-          .select("id, ad_soyad, rol")
-          .single();
-
-        if (createProfileError) {
-          throw createProfileError;
-        }
-
-        profile = createdProfile as Profile;
-      }
+      const profile = profileData as Profile | null;
 
       if (!profile || !isRole(profile.rol)) {
         await supabase.auth.signOut();
         setMessage(
           "Giris basarili ama bu hesaba ait panel yetkisi bulunamadi. Hoca/admin hesabiysa yonetici onayi veya profil kaydi gerekli.",
+        );
+        return;
+      }
+
+      if (profile.rol !== selectedRole) {
+        await supabase.auth.signOut();
+        setMessage(
+          `Bu hesap ${roleLabel(profile.rol)} rolune ait. Lutfen ${roleLabel(profile.rol)} rolunu secerek giris yap.`,
         );
         return;
       }
@@ -329,4 +318,13 @@ function formatAuthError(error: unknown) {
   }
 
   return message || "İşlem tamamlanamadı.";
+}
+
+function roleLabel(role: Role) {
+  const labels: Record<Role, string> = {
+    admin: "Yonetici",
+    hoca: "Hoca",
+    sporcu: "Sporcu",
+  };
+  return labels[role];
 }

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { DEBUG_MODE } from "@/lib/debug";
 
 type Profile = {
   id: string;
@@ -71,8 +72,48 @@ export default function HocaPage() {
   const [connectionMessage, setConnectionMessage] = useState("");
   const [profileMessage, setProfileMessage] = useState("");
 
+  async function loadDebug() {
+  setProfile({
+    id: "debug-coach",
+    ad_soyad: "Debug Coach",
+    email: "coach@example.com",
+    hoca_kodu: "DEBUG123",
+    rol: "hoca",
+  });
+
+  setCoachId("debug-coach");
+
+  setConnections([
+    {
+      sporcu_id: "athlete-1",
+      durum: "onaylandi",
+      profiles: {
+        ad_soyad: "Ahmet Can",
+        email: "ahmetcan@example.com",
+      },
+    },
+    {
+      sporcu_id: "athlete-2",
+      durum: "bekliyor",
+      profiles: {
+        ad_soyad: "Dwayne Johnson ",
+        email: "dwayne@example.com",
+      },
+    },
+  ]);
+
+    setPrograms([]);
+    setNotifications([]);
+    setMessage("");
+  }
+
+
   useEffect(() => {
     async function load() {
+      if (DEBUG_MODE) {
+        await loadDebug();
+        return;
+      }
       try {
         const supabase = getSupabaseClient();
         const { data: authData } = await supabase.auth.getUser();

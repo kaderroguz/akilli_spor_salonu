@@ -1,4 +1,4 @@
 .streamlit/
 __pycache__/
 *.pyc
-web/lib/debug.ts
+

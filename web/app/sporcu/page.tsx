@@ -4,8 +4,11 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "re
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { DEBUG_MODE } from "@/lib/debug";
 
 type Tab = "ozet" | "kamera" | "program" | "sonuclar" | "bildirimler" | "profil";
+
+
 
 type Profile = {
   id: string;
@@ -261,6 +264,30 @@ export default function SporcuPage() {
   );
 
   const load = useCallback(async () => {
+    if (DEBUG_MODE) 
+    {
+    setProfile({
+      id: "debug-user",
+      ad_soyad: "Debug User",
+      email: "debug@example.com",
+      rol: "sporcu",
+      created_at: null,
+      dogum_tarihi: null,
+      boy_cm: 180,
+      kilo_kg: 75,
+      seviye: "Başlangıç",
+      sakatlik_notu: null,
+      saglik_verisi_onayi: true,
+    });
+
+    setTrainings([]);
+    setPrograms([]);
+    setNotifications([]);
+    setConnections([]);
+    setMessage("");
+    return;
+    }
+
     try {
       const supabase = getSupabaseClient();
       const { data: authData } = await supabase.auth.getUser();

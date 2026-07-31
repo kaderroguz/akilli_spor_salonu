@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { DEBUG_MODE } from "@/lib/debug";
 
 type Profile = {
   id: string;
@@ -37,8 +38,62 @@ export default function AdminPage() {
   const [requestMessage, setRequestMessage] = useState("");
   const [profileMessage, setProfileMessage] = useState("");
 
+
+  async function loadDebug() {
+  setAdminName("Debug Admin");
+
+  setAdminProfile({
+    id: "debug-admin",
+    ad_soyad: "Debug Admin",
+    email: "admin@example.com",
+    rol: "admin",
+    created_at: new Date().toISOString(),
+  });
+
+  setProfiles([
+    {
+      id: "athlete-1",
+      ad_soyad: "John Doe",
+      email: "john@example.com",
+      rol: "sporcu",
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "athlete-2",
+      ad_soyad: "Jane Smith",
+      email: "jane@example.com",
+      rol: "sporcu",
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "coach-1",
+      ad_soyad: "Alice Coach",
+      email: "alice@example.com",
+      rol: "hoca",
+      created_at: new Date().toISOString(),
+    },
+  ]);
+
+  setRequests([
+    {
+      id: 1,
+      kullanici_id: "athlete-2",
+      durum: "bekliyor",
+      profil: {
+        ad_soyad: "Jane Smith",
+        email: "jane@example.com",
+      },
+    },
+  ]);
+
+  setMessage("");
+}
   useEffect(() => {
     async function load() {
+    if (DEBUG_MODE) {
+      await loadDebug();
+      return;
+    }
       try {
         const supabase = getSupabaseClient();
         const { data: authData } = await supabase.auth.getUser();
